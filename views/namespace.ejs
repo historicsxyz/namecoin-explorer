@@ -22,8 +22,8 @@
     <thead><tr><th><%= t('ns.name') %></th><th><%= t('ns.value') %></th><th><%= t('ns.updated') %></th><th><%= t('ns.expiresIn') %></th><th><%= t('ns.status') %></th></tr></thead>
     <tbody>
       <% (rows||[]).forEach(r => { %>
-      <tr>
-        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
+      <tr class="row-link" data-href="/name/<%= encodeURIComponent(r.name) %>">
+        <td class="mono"><a class="row-link-hit" href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name || '—' %></a></td>
         <td class="mono" style="max-width:240px;overflow:hidden;text-overflow:ellipsis"><%= (r.value||'').slice(0,40) %></td>
         <td><%= nfmt(r.height) %></td>
         <td class="mono"><%= r.expires_in!=null?nfmt(r.expires_in):'—' %></td>

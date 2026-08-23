@@ -272,9 +272,21 @@ html[data-theme="dark"] [data-theme-toggle] .ico-moon { display: block; }
 .record-field .s { color: var(--dim); font-size: 12px; line-height: 1.4; }
 .record-span { grid-column: 1 / -1; }
 
-.dl { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 13.5px; padding-bottom: 12px; }
-.dl dt { color: var(--muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: .08em; align-self: center; }
-.dl dd { margin: 0; word-break: break-all; }
+.dl {
+  display: grid;
+  grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+  gap: 8px 16px;
+  font-size: 13.5px;
+  padding-bottom: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+.dl dt {
+  color: var(--muted); text-transform: uppercase; font-size: 10.5px;
+  letter-spacing: .08em; align-self: start; padding-top: 4px;
+  min-width: 0; overflow-wrap: anywhere;
+}
+.dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; word-break: break-all; }
 
 .latest-block h2 { width: 100%; }
 .latest-block-link { margin-left: auto; height: 28px; padding: 0 10px; font-size: 12px; }
@@ -302,6 +314,7 @@ td a {
 }
 tr:last-child td { border-bottom: 0; }
 tr:hover td { background: var(--accent-soft); }
+tr.row-link { cursor: pointer; }
 .table-wrap {
   width: 100%; max-width: 100%; min-width: 0;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -399,16 +412,36 @@ a.btn.btn-ghost:hover {
 }
 .pager, .pager { display: flex; gap: 12px; align-items: center; padding: 12px 0 8px; font-size: 13px; }
 
+.value-wrap { min-width: 0; max-width: 100%; overflow: hidden; }
+pre.value { font: inherit; }
 .value, .api-json {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
   background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 14px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px;
-  white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; color: var(--ink);
-  max-height: 360px; overflow: auto;
+  padding: 12px 14px;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  color: var(--ink);
+  max-height: 280px;
+  overflow: auto;
 }
-.value-list { margin: 0; padding: 0 0 8px 22px; }
-.value-list li { margin: 8px 0; min-width: 0; }
-.value-list .value { margin-top: 6px; }
-.dl dd .value { margin-top: 4px; max-height: 220px; }
+.value-plain {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.value-list { margin: 0; padding: 0 0 8px 1.35em; max-width: 100%; min-width: 0; }
+.value-list li { margin: 8px 0; min-width: 0; max-width: 100%; overflow: hidden; }
+.value-list .value { margin-top: 6px; max-height: 200px; }
+.dl dd .value { margin-top: 4px; max-height: 200px; }
+.value-wrap.compact .value { max-height: 160px; font-size: 12px; padding: 10px 12px; }
 .api-json { max-height: none; }
 
 .error {
@@ -442,6 +475,9 @@ a.btn.btn-ghost:hover {
 .tl-value-block {
   margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--line);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .tl-value-block > .l {
   display: block; margin-bottom: 8px;
@@ -449,8 +485,11 @@ a.btn.btn-ghost:hover {
   font-size: 10.5px; font-weight: 650;
 }
 .tl-content .value-list { padding-bottom: 0; }
-.tl-content .value { max-height: 220px; font-size: 12px; }
-.dl.compact { grid-template-columns: 100px 1fr; gap: 6px 12px; padding-bottom: 0; font-size: 13px; }
+.tl-content .value { max-height: 160px; font-size: 12px; }
+.dl.compact {
+  grid-template-columns: minmax(0, 100px) minmax(0, 1fr);
+  gap: 6px 12px; padding-bottom: 0; font-size: 13px;
+}
 
 .site-footer {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;

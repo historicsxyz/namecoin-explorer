@@ -1,4 +1,4 @@
-<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : t('tx.title') %></h1><span class="crumb"><%= t('tx.crumb') %></span></div>
+<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : t('tx.title') %></h1></div>
 
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
 

@@ -24,8 +24,8 @@
     <thead><tr><th><%= t('names.name') %></th><th><%= t('names.value') %></th><th><%= t('names.owner') %></th><th><%= t('names.updated') %></th><th><%= t('names.expiresIn') %></th><th><%= t('names.status') %></th></tr></thead>
     <tbody>
       <% (rows||[]).forEach(r => { %>
-      <tr>
-        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
+      <tr class="row-link" data-href="/name/<%= encodeURIComponent(r.name) %>">
+        <td class="mono"><a class="row-link-hit" href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name || '—' %></a></td>
         <td class="mono" style="max-width:260px;overflow:hidden;text-overflow:ellipsis"><%= (r.value||'').slice(0,50) %></td>
         <td class="mono" style="font-size:11px;color:var(--dim)"><%= r.address ? r.address.slice(0,14)+'…' : '—' %></td>
         <td><%= nfmt(r.height) %></td>

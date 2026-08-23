@@ -1,18 +1,21 @@
+<% const isCompact = typeof compact !== 'undefined' && compact; %>
+<div class="value-wrap<%= isCompact ? ' compact' : '' %>">
 <% if (decoded && decoded.kind === 'list' && decoded.items && decoded.items.length) { %>
-  <ol class="value-list<%= typeof compact !== 'undefined' && compact ? ' compact' : '' %>">
+  <ol class="value-list">
     <% decoded.items.forEach(item => { %>
-    <li><% if (item.isObject) { %><div class="value"><%= item.value %></div><% } else { %><span class="mono"><%= item.value %></span><% } %></li>
+    <li><% if (item.isObject) { %><pre class="value"><%= item.value %></pre><% } else { %><span class="mono value-plain"><%= item.value %></span><% } %></li>
     <% }) %>
   </ol>
 <% } else if (decoded && decoded.kind === 'json' && decoded.table && decoded.table.length) { %>
-  <div class="dl<%= typeof compact !== 'undefined' && compact ? ' compact' : '' %>">
+  <div class="dl<%= isCompact ? ' compact' : '' %>">
     <% decoded.table.forEach(row => { %>
       <dt class="mono"><%= row.label %></dt>
-      <dd><% if (row.isObject) { %><div class="value"><%= row.value %></div><% } else { %><span class="mono"><%= row.value %></span><% } %></dd>
+      <dd><% if (row.isObject) { %><pre class="value"><%= row.value %></pre><% } else { %><span class="mono value-plain"><%= row.value %></span><% } %></dd>
     <% }) %>
   </div>
 <% } else if (decoded && decoded.raw) { %>
-  <div class="value"><%= decoded.raw %></div>
+  <pre class="value"><%= decoded.raw %></pre>
 <% } else if (typeof fallback !== 'undefined' && fallback) { %>
-  <div class="value"><%= fallback %></div>
+  <pre class="value"><%= fallback %></pre>
 <% } %>
+</div>

@@ -2,7 +2,8 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { ingestOptionsFromEnv } = require('../lib/ingest');
+const { IngestService, ingestOptionsFromEnv } = require('../lib/ingest');
+const { NameCache } = require('../lib/cache');
 const { NAME_EXPIRY_DEPTH } = require('../lib/expiry');
 const { t, pickLang } = require('../lib/i18n');
 
@@ -23,6 +24,76 @@ describe('ingestOptionsFromEnv', () => {
   it('passes through a hashblock ZMQ URL', () => {
     const o = ingestOptionsFromEnv({ NMC_ZMQ_HASHBLOCK: 'tcp://127.0.0.1:28332' });
     assert.equal(o.zmqUrl, 'tcp://127.0.0.1:28332');
+  });
+});
+
+function nameTx(txid, op, name, value, address) {
+  return {
+    txid,
+    vout: [{
+      scriptPubKey: {
+        nameOp: { op, name, value },
+        address,
+      },
+    }],
+  };
+}
+
+describe('IngestService.backfillName', () => {
+  it('merges name_history onto a name that already has one windowed op', async () => {
+    const cache = new NameCache(':memory:');
+    cache.insertBlock({
+      header: { height: 200, hash: 'h2', time: 20, prev: 'h1', ntx: 1, merkle: 'm' },
+      ops: [{
+        txid: 'recent',
+        vout: 0,
+        op: 'NAME_UPDATE',
+        name: 'd/paper',
+        nameHex: Buffer.from('d/paper').toString('hex'),
+        value: 'v2',
+        address: 'N2',
+      }],
+      tipHeight: 200,
+    });
+    assert.equal(cache.opsForName('d/paper').length, 1);
+    assert.equal(cache.isHistorySynced('d/paper'), false);
+
+    const rpc = {
+      nameHistory: async () => ([
+        { txid: 'first', height: 50 },
+        { txid: 'recent', height: 200 },
+      ]),
+      call: async (method, params) => {
+        if (method === 'getrawtransaction') {
+          return params[0] === 'first'
+            ? nameTx('first', 'name_firstupdate', 'd/paper', 'v1', 'N1')
+            : nameTx('recent', 'name_update', 'd/paper', 'v2', 'N2');
+        }
+        if (method === 'getblockhash') return 'bh';
+        if (method === 'getblockheader') return { time: 10 };
+        throw new Error(method);
+      },
+    };
+    const ingest = new IngestService(rpc, cache);
+    const ops = await ingest.backfillName('d/paper');
+    assert.equal(ops.length, 2);
+    assert.equal(ops[0].op, 'NAME_FIRSTUPDATE');
+    assert.equal(ops[0].txid, 'first');
+    assert.equal(ops[1].op, 'NAME_UPDATE');
+    assert.equal(cache.isHistorySynced('d/paper'), true);
+    cache.close();
+  });
+
+  it('returns null and leaves history unsynced when name_history fails', async () => {
+    const cache = new NameCache(':memory:');
+    const rpc = {
+      nameHistory: async () => { throw new Error('rpc down'); },
+    };
+    const ingest = new IngestService(rpc, cache);
+    const ops = await ingest.backfillName('d/missing');
+    assert.equal(ops, null);
+    assert.equal(cache.isHistorySynced('d/missing'), false);
+    cache.close();
   });
 });
 

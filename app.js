@@ -234,9 +234,11 @@ app.get('/name/:name', async (req, res) => {
   catch (e) { res.locals.nameError = e.message; }
 
   let ops = cache.opsForName(rawName);
-  if (!ops.length) {
-    try { ops = await ingest.backfillName(rawName); }
-    catch (e) { /* history optional */ }
+  if (!cache.isHistorySynced(rawName)) {
+    try {
+      const filled = await ingest.backfillName(rawName);
+      if (filled) ops = filled;
+    } catch (e) { /* history optional */ }
   }
   const timeline = timelineFromOps(ops || []);
 

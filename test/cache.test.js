@@ -97,6 +97,9 @@ describe('NameCache', () => {
     assert.equal(ops.length, 1);
     assert.equal(ops[0].op, 'NAME_FIRSTUPDATE');
     assert.equal(cache.getTip().height, 200);
+    assert.equal(cache.isHistorySynced('d/x'), false);
+    cache.markHistorySynced('d/x');
+    assert.equal(cache.isHistorySynced('d/x'), true);
     cache.close();
   });
 });
