@@ -1,0 +1,18 @@
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'box'}) %> Blocks</h1><span class="crumb">most recent first</span></div>
+
+<div class="panel">
+  <table>
+    <thead><tr><th>Height</th><th>Hash</th><th>Time</th><th>Txs</th><th>Name Ops</th></tr></thead>
+    <tbody>
+      <% (blocks||[]).forEach(b => { %>
+      <tr>
+        <td><a href="/block/<%= b.hash %>"><%= nfmt(b.height) %></a></td>
+        <td class="hash"><a href="/block/<%= b.hash %>"><%= b.hash.slice(0,22) %>…</a></td>
+        <td class="mono" style="font-size:11px;color:var(--dim)"><%= new Date(b.time*1000).toLocaleString() %></td>
+        <td><%= nfmt(b.nTx) %></td>
+        <td><%= b._nameOpCount!=null ? b._nameOpCount : '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

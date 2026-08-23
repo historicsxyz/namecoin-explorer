@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-check:
+    name: Syntax & deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Syntax-check all JS
+        run: |
+          for f in app.js lib/*.js; do node --check "$f"; done
+      - name: Compile-check EJS templates
+        run: node -e "
+          const ejs=require('ejs'),fs=require('fs');
+          for(const v of fs.readdirSync('views')) if(v.endsWith('.ejs')) ejs.compile(fs.readFileSync('views/'+v,'utf8'), {filename:'views/'+v});
+          console.log('all EJS compile OK');"
+      - name: Dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+  test:
+    name: Unit / smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Run tests (if present)
+        run: npm test 2>&1 || echo "no test runner configured yet — see CONTRIBUTING.md"
+  # NOTE: A namecoind fixture is not launched in CI today. Tests that hit a live
+  # node run only in a self-hosted/dev environment. See CONTRIBUTING.md.

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof title !== 'undefined' && title ? title + ' · ' : '' %>Namecoin Explorer</title>
+  <link rel="stylesheet" href="/vendor/bulma.min.css">
+  <link rel="stylesheet" href="/css/brutalist.css">
+</head>
+<body>
+  <!-- mobile header / app bar (mobile only) -->
+  <header class="mobile-header">
+    <button id="menu-btn" class="mh-btn" type="button" aria-label="Menu">☰</button>
+    <a href="/" class="mh-title"><%- include('includes/_logo', {}) %></a>
+    <button id="theme-btn" class="mh-btn" type="button" aria-label="Toggle theme">
+      <%- include('includes/_icon', {icon:'sun'}) %>
+      <%- include('includes/_icon', {icon:'moon'}) %>
+    </button>
+  </header>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <a href="/" class="brand"><%- include('includes/_logo', {}) %></a>
+    <nav class="nav">
+      <a class="<%= locals.page==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'home'}) %><span>Home</span></a>
+      <a class="<%= locals.page==='names'?'active':'' %>" href="/names"><%- include('includes/_icon', {icon:'search'}) %><span>Name Browser</span></a>
+      <a class="<%= locals.page==='operations'?'active':'' %>" href="/operations"><%- include('includes/_icon', {icon:'activity'}) %><span>Name Operations</span></a>
+      <a class="<%= locals.page==='blocks'?'active':'' %>" href="/blocks"><%- include('includes/_icon', {icon:'blocks'}) %><span>Blocks</span></a>
+      <a class="<%= locals.page==='txs'?'active':'' %>" href="/stats"><%- include('includes/_icon', {icon:'chart'}) %><span>Statistics</span></a>
+      <a href="/api/stats"><%- include('includes/_icon', {icon:'code'}) %><span>JSON API</span></a>
+    </nav>
+    <div class="status-box">
+      <div class="row"><span class="k">Block</span><span class="v" id="block-n">0</span></div>
+      <div class="row"><span class="k">Names</span><span class="v" id="name-n">0</span></div>
+      <div class="row"><span class="k">Chain</span><span class="v" id="chain"><%= (locals.chainInfo&&locals.chainInfo.chain)||'-' %></span></div>
+      <div class="row"><span class="k">Sync</span><span class="v" id="sync"><%= (locals.chainInfo&&locals.chainInfo.initialblockdownload)?'syncing':'ready' %></span></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="search">
+      <input type="text" placeholder="SEARCH NAME — e.g. d/bitcoin, u/steven…">
+      <div class="search-results" style="display:none"></div>
+    </div>
+    <%- body %>
+    <footer>self-hosted namecoin explorer v2 · queries own full node · registry cached</footer>
+  </main>
+  </div>
+
+  <script>
+    // ---------- mobile drawer / menu ----------
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const menuBtn = document.getElementById('menu-btn');
+    if (sidebar && backdrop && menuBtn) {
+      const open = () => {
+        sidebar.classList.add('open');
+        backdrop.classList.add('show');
+        document.body.style.overflow = 'hidden';   // lock scroll behind drawer
+      };
+      const close = () => {
+        sidebar.classList.remove('open');
+        backdrop.classList.remove('show');
+        document.body.style.overflow = '';
+      };
+      menuBtn.addEventListener('click', () => sidebar.classList.contains('open') ? close() : open());
+      backdrop.addEventListener('click', close);
+      // close after navigating (mobile)
+      sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      // close on resize if going desktop
+      window.addEventListener('resize', () => { if (window.innerWidth > 900) close(); });
+    }
+
+    // ---------- table scroll wrapper (mobile) ----------
+    // Wrap every bare <table> in a horizontal-scroll container so long
+    // tables don't blow up the viewport on phones.
+    (function wrapTables() {
+      document.querySelectorAll('table').forEach((t) => {
+        if (t.parentElement && t.parentElement.classList.contains('table-wrap')) return;
+        const w = document.createElement('div');
+        w.className = 'table-wrap';
+        t.parentNode.insertBefore(w, t);
+        w.appendChild(t);
+      });
+    })();
+
+    // ---------- theme ----------
+    (function theme() {
+      const root = document.documentElement;
+      const KEY = 'nmc-theme';
+      // resolve initial: stored > system pref > dark
+      let theme = localStorage.getItem(KEY);
+      if (!theme) theme = 'light'; // light is the default state
+      root.setAttribute('data-theme', theme);
+      const btn = document.getElementById('theme-btn');
+      const setIcons = () => {
+        // show sun when light (tapping -> dark), moon when dark
+        const isLight = root.getAttribute('data-theme') === 'light';
+        const icons = Array.from(document.querySelectorAll('#theme-btn .nav-ico'));
+        if (icons.length === 2) {
+          icons[0].style.display = isLight ? 'block' : 'none'; // sun
+          icons[1].style.display = isLight ? 'none' : 'block'; // moon
+        }
+      };
+      if (btn) {
+        btn.addEventListener('click', () => {
+          const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+          root.setAttribute('data-theme', next);
+          localStorage.setItem(KEY, next);
+          setIcons();
+        });
+      }
+      setIcons();
+    })();
+
+    // ---------- status ----------
+    const chain = <%= JSON.stringify((locals.chainInfo||{}).blocks||0) %>;
+    const names = <%= JSON.stringify(locals.registryCount||0) %>;
+    if (document.getElementById('block-n')) document.getElementById('block-n').textContent = chain.toLocaleString();
+    if (document.getElementById('name-n')) document.getElementById('name-n').textContent = names.toLocaleString();
+
+    // ---------- live search ----------
+    const sinput = document.querySelector('.search input');
+    const sresults = document.querySelector('.search-results');
+    if (sinput && sresults) {
+      let timer;
+      sinput.addEventListener('input', () => {
+        clearTimeout(timer);
+        const q = sinput.value.trim();
+        if (q.length < 2) { sresults.innerHTML=''; sresults.style.display='none'; return; }
+        timer = setTimeout(async () => {
+          try {
+            const r = await fetch('/api/search?q=' + encodeURIComponent(q));
+            const j = await r.json();
+            sresults.innerHTML = (j.items||[]).map(i=>`<a href="/name/${encodeURIComponent(i.name)}">${i.name}</a>`).join('') || '<div class="empty">no match</div>';
+            sresults.style.display = 'block';
+          } catch(e) {}
+        }, 250);
+      });
+      sinput.addEventListener('keydown', (e)=>{ if(e.key==='Escape'||e.key==='Enter'){ sresults.style.display='none'; }});
+    }
+  </script>
+</body>
+</html>

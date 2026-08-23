@@ -1,0 +1,60 @@
+<div class="topbar">
+  <h1 class="mono">Block #<%= (block && block.height != null) ? nfmt(block.height) : '' %></h1>
+  <span class="crumb"><a href="/blocks">← blocks</a></span>
+</div>
+
+<% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+
+<% if (block) { %>
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'box'}) %> Header</h2>
+  <dl class="dl">
+    <dt>Hash</dt><dd><%= block.hash %></dd>
+    <dt>Height</dt><dd><%= nfmt(block.height) %></dd>
+    <dt>Time</dt><dd><%= new Date(block.time*1000).toUTCString() %></dd>
+    <% if (block.previousblockhash) { %><dt>Previous</dt><dd><a href="/block/<%= block.previousblockhash %>"><%= block.previousblockhash.slice(0,24) %>…</a></dd><% } %>
+    <dt>Transactions</dt><dd><%= nfmt(block.nTx) %></dd>
+    <dt>Name ops in block</dt><dd><%= block._nameOpCount||0 %></dd>
+    <dt>Merkle root</dt><dd class="mono"><%= block.merkleroot %></dd>
+    <% if (block.nonce!=null) { %><dt>Nonce</dt><dd><%= block.nonce %></dd><% } %>
+  </dl>
+</div>
+
+  <% if (block._nameOpCount > 0) { %>
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'activity'}) %> Name Operations in this block (<%= block._nameOpCount %>)</h2>
+    <table>
+      <thead><tr><th>Operation</th><th>Name</th><th>Value</th><th>Tx</th></tr></thead>
+      <tbody>
+        <% (block.tx||[]).forEach(tx => { %>
+          <% (tx._nameOps||[]).forEach(o => { %>
+          <tr>
+            <td><span class="pill gray"><%= o.op.replace('OP_NAME_','') %></span></td>
+            <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
+            <td class="mono" style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><%= String(o.value||'').slice(0,40) %></td>
+            <td class="mono"><a href="/tx/<%= tx.txid %>"><%= tx.txid.slice(0,14) %>…</a></td>
+          </tr>
+          <% }) %>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'file-text'}) %> Transactions (<%= block.nTx %>)</h2>
+    <table>
+      <thead><tr><th>Txid</th><th>Inputs</th><th>Outputs</th><th>Contains name op</th></tr></thead>
+      <tbody>
+        <% (block.tx||[]).forEach(tx => { %>
+        <tr>
+          <td class="mono"><a href="/tx/<%= tx.txid %>"><%= tx.txid.slice(0,24) %>…</a></td>
+          <td><%= (tx.vin||[]).length %></td>
+          <td><%= (tx.vout||[]).length %></td>
+          <td><% if (tx._nameOps && tx._nameOps.length) { %><span class="pill blue">yes (<%= tx._nameOps.length %>)</span><% } else { %><span class="dim">no</span><% } %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

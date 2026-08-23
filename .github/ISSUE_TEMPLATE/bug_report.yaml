@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a bug or unexpected behaviour
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what is wrong.
+      placeholder: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: To reproduce
+      description: Steps, exact URL/query (e.g. /name/d%2Fbitcoin), and what you saw.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should happen instead.
+    validations:
+      required: false
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      description: Browser/OS (and Node.js if self-hosted), explorer version/commit.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots / logs
+      description: Add a screenshot or paste error output. Redact credentials!
+    validations:
+      required: false

@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest an improvement or new feature
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Is this about browsing names, provenance, the operations feed, API, design?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should be added or changed?
+    validations:
+      required: true
+  - type: textarea
+    id: alt
+    attributes:
+      label: Alternatives
+      description: Any workarounds or alternatives you considered.
+    validations:
+      required: false

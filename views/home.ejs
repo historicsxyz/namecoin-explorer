@@ -1,0 +1,73 @@
+<div class="topbar"><h1>Namecoin Explorer</h1><span class="crumb">decentralized naming · DNS · identities · all on-chain</span></div>
+
+<div class="grid cols-4">
+  <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= latest ? nfmt(latest) : '—' %></div><div class="l">Block height</div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n" id="st-total"><%= (namespaces||[]).reduce((a,r)=>a+r.total,0) %></div><div class="l">Total names</div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= (namespaces||[]).reduce((a,r)=>a+(r.live||0),0) %></div><div class="l">Live names</div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= (namespaces||[]).reduce((a,r)=>a+(r.expired||0),0) %></div><div class="l">Expired</div></div>
+</div>
+
+<div class="grid cols-2">
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'blocks'}) %> Latest Block</h2>
+    <% if (block) { %>
+    <dl class="dl">
+      <dt>Height</dt><dd><a href="/block/<%= block.hash %>"><%= block.height.toLocaleString() %></a></dd>
+      <dt>Hash</dt><dd><a href="/block/<%= block.hash %>"><%= block.hash.slice(0,28) %>…</a></dd>
+      <dt>Time</dt><dd><%= new Date(block.time*1000).toUTCString() %></dd>
+      <dt>Transactions</dt><dd><%= block.nTx %></dd>
+      <dt>Merkle</dt><dd class="mono"><%= block.merkleroot.slice(0,20) %>…</dd>
+    </dl>
+    <% } else { %><p class="muted">Awaiting block data…</p><% } %>
+  </div>
+
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'layers'}) %> Namespaces</h2>
+    <table>
+      <thead><tr><th>Prefix</th><th>Total</th><th>Live</th><th>Expired</th></tr></thead>
+      <tbody>
+        <% (namespaces||[]).slice(0,8).forEach(r => { %>
+        <tr>
+          <td class="mono"><a href="/namespace/<%= r.namespace.replace(/\/$/,'') %>"><%= r.namespace %></a></td>
+          <td><%= nfmt(r.total) %></td>
+          <td style="color:var(--green)"><%= nfmt(r.live||0) %></td>
+          <td style="color:var(--red)"><%= nfmt(r.expired||0) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="panel">
+      <h2><%- include('includes/_icon', {icon:'activity'}) %> Recently Updated</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Height</th><th>Status</th></tr></thead>
+      <tbody>
+        <% (recent||[]).slice(0,8).forEach(r => { %>
+        <tr>
+          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+          <td><%= nfmt(r.height) %></td>
+          <td><% if (r.expired) { %><span class="pill red">expired</span><% } else if (r.expires_in && r.expires_in<1000) { %><span class="pill yellow">expiring</span><% } else { %><span class="pill green">live</span><% } %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'clock'}) %> Expiring Soon</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Expires in (blk)</th></tr></thead>
+      <tbody>
+        <% (expiring||[]).slice(0,8).forEach(r => { %>
+        <tr>
+          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+          <td class="mono" style="color:var(--yellow)"><%= nfmt(r.expires_in) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>

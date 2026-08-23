@@ -1,0 +1,52 @@
+<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : 'Transaction' %></h1><span class="crumb">namecoin transaction</span></div>
+
+<% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+
+<% if (tx) { %>
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'file-text'}) %> Summary</h2>
+  <dl class="dl">
+    <dt>Txid</dt><dd><%= tx.txid %></dd>
+    <% if (tx.blockhash) { %><dt>Block</dt><dd><a href="/block/<%= tx.blockhash %>"><%= tx.blockhash.slice(0,24) %>…</a></dd><% } %>
+    <dt>Confirmations</dt><dd><%= tx.confirmations %></dd>
+    <dt>Inputs / Outputs</dt><dd><%= (tx.vin||[]).length %> in / <%= (tx.vout||[]).length %> out</dd>
+    <% if (tx.blocktime) { %><dt>Time</dt><dd><%= new Date(tx.blocktime*1000).toUTCString() %></dd><% } %>
+  </dl>
+</div>
+
+  <% if (nameOps && nameOps.length) { %>
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'tag'}) %> Name Operations</h2>
+    <table>
+      <thead><tr><th>vout</th><th>Operation</th><th>Name</th><th>Value</th></tr></thead>
+      <tbody>
+        <% nameOps.forEach(o => { %>
+        <tr>
+          <td><%= o.vout %></td>
+          <td><span class="pill blue"><%= o.op.replace('OP_NAME_','') %></span></td>
+          <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
+          <td class="mono" style="max-width:280px;word-break:break-all;white-space:pre-wrap"><%= String(o.value||'') %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'box'}) %> Outputs</h2>
+    <table>
+      <thead><tr><th>Index</th><th>Value</th><th>Address</th><th>Type</th></tr></thead>
+      <tbody>
+        <% (tx.vout||[]).forEach((o,i) => { %>
+        <tr>
+          <td><%= i %></td>
+          <td class="mono"><%= o.value %></td>
+          <td class="mono" style="font-size:11px"><%= o.scriptPubKey.address||'—' %></td>
+          <td class="mono" style="font-size:11px;color:var(--dim)"><%= o.scriptPubKey.type %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
