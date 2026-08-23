@@ -1,6 +1,6 @@
 {
   "name": "namecoin-explorer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Self-hosted Namecoin name browser and operations explorer. SQLite index, JSON API, backed by your own namecoind.",
   "main": "app.js",
   "scripts": {
@@ -8,6 +8,7 @@
     "dev": "node --watch app.js",
     "dev:vps": "powershell -File scripts/dev-vps.ps1",
     "check": "node --check app.js",
+    "og:render": "node scripts/render-og.js",
     "test": "node --test"
   },
   "keywords": [

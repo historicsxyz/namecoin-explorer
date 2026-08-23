@@ -14,6 +14,7 @@ const { NameCache } = require('./lib/cache');
 const { IngestService, ingestOptionsFromEnv } = require('./lib/ingest');
 const { t, pickLang } = require('./lib/i18n');
 const { sendApiJson } = require('./lib/api-json');
+const { attachSeo, registerSeoRoutes } = require('./lib/seo');
 const {
   parseNamespace,
   classifyValue,
@@ -21,7 +22,7 @@ const {
   timelineFromOps,
   OP_LABELS,
 } = require('./lib/names');
-const { expiryStatus, SEMI_EXPIRE_WINDOW } = require('./lib/expiry');
+const { expiryStatus, SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
 const registerRoutes = require('./lib/routes');
 
 function loadEnvFile(file) {
@@ -71,7 +72,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const logStream = fs.createWriteStream(path.join(__dirname, 'explorer.log'), { flags: 'a' });
 app.use(morgan('combined', { stream: logStream }));
 
+const APP_VERSION = require('./package.json').version;
 const nsInfo = (n) => parseNamespace(typeof n === 'string' ? n : '');
+app.locals.appVersion = APP_VERSION;
 app.locals.nsInfo = nsInfo;
 app.locals.renderValue = renderValue;
 app.locals.classifyValue = classifyValue;
@@ -92,6 +95,34 @@ app.locals.fmtDuration = (sec) => {
   if (s < 86400) return Math.floor(s / 3600) + 'h';
   return Math.floor(s / 86400) + 'd';
 };
+app.locals.shortId = (s, head = 10, tail = 8) => {
+  const str = s == null ? '' : String(s);
+  if (str.length <= head + tail + 1) return str;
+  return str.slice(0, head) + '…' + str.slice(-tail);
+};
+app.locals.fmtUtc = (ts, lang) => {
+  if (ts == null || !Number.isFinite(Number(ts))) return '';
+  const d = new Date(Number(ts) * 1000);
+  if (Number.isNaN(d.getTime())) return '';
+  const locale = lang === 'de' ? 'de-DE' : 'en-GB';
+  return d.toLocaleString(locale, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC',
+  }) + ' UTC';
+};
+app.locals.relDur = (ts) => {
+  if (ts == null || !Number.isFinite(Number(ts))) return null;
+  const delta = Date.now() / 1000 - Number(ts);
+  const future = delta < 0;
+  const abs = Math.abs(delta);
+  let label;
+  if (abs < 60) label = Math.floor(abs) + 's';
+  else if (abs < 3600) label = Math.floor(abs / 60) + 'm';
+  else if (abs < 86400) label = Math.floor(abs / 3600) + 'h';
+  else if (abs < 86400 * 365) label = Math.floor(abs / 86400) + 'd';
+  else label = (abs / (86400 * 365)).toFixed(1).replace(/\.0$/, '') + 'y';
+  return { future, t: label };
+};
 app.locals.OP_LABELS = OP_LABELS;
 app.locals.hexToName = hexToName;
 app.locals.SEMI_EXPIRE_WINDOW = SEMI_EXPIRE_WINDOW;
@@ -109,6 +140,8 @@ app.use((req, res, next) => {
   res.locals.t = (key, vars) => t(lang, key, vars);
   next();
 });
+app.use(attachSeo);
+registerSeoRoutes(app);
 
 app.use((req, res, next) => {
   const tip = cache.getTip();
@@ -160,6 +193,11 @@ app.get('/', async (req, res) => {
   res.render('home', { block, recent, expiring, latest, namespaces });
 });
 
+app.get('/og', (req, res) => {
+  res.locals.page = 'og';
+  res.render('og');
+});
+
 app.get('/names', async (req, res) => {
   res.locals.page = 'names';
   const { limit = 50, start = '', ns = null, status = null, q = null } = req.query;
@@ -207,9 +245,61 @@ app.get('/name/:name', async (req, res) => {
 
   const decoded = show ? renderValue(show) : null;
 
+  let record = null;
+  if (show) {
+    let updateTs = null;
+    let updateApprox = false;
+    const histHit = (timeline || []).find((h) => h.txid && h.txid === show.txid && h.timeMs)
+      || (timeline || []).filter((h) => h.height === show.height && h.timeMs).pop();
+    if (histHit) updateTs = histHit.timeMs / 1000;
+    if (updateTs == null && show.height != null) {
+      try {
+        const hdr = cache.headerAt(show.height);
+        if (hdr && hdr.time) updateTs = hdr.time;
+      } catch { /* empty index */ }
+    }
+    if (updateTs == null && show.height != null) {
+      try {
+        const hash = await rpc.call('getblockhash', [Number(show.height)]);
+        const header = await rpc.call('getblockheader', [hash, true]);
+        if (header && header.time) updateTs = header.time;
+      } catch { /* node down */ }
+    }
+
+    let expiresTs = null;
+    let expiresApprox = true;
+    const expiryHeight = show.height != null ? Number(show.height) + NAME_EXPIRY_DEPTH : null;
+    if (expiryHeight != null) {
+      try {
+        const expHdr = cache.headerAt(expiryHeight);
+        if (expHdr && expHdr.time) {
+          expiresTs = expHdr.time;
+          expiresApprox = false;
+        }
+      } catch { /* not indexed */ }
+    }
+    if (expiresTs == null) {
+      try {
+        const tip = cache.getTip();
+        const tipHdr = tip ? cache.headerAt(tip.height) : null;
+        if (tipHdr && tipHdr.time != null && show.expires_in != null) {
+          expiresTs = shiftByBlocks(tipHdr.time, show.expires_in);
+        }
+      } catch { /* empty index */ }
+    }
+    if (expiresTs == null && updateTs != null) {
+      expiresTs = shiftByBlocks(updateTs, NAME_EXPIRY_DEPTH);
+    }
+    if (expiresTs == null && show.expires_in != null) {
+      expiresTs = shiftByBlocks(Date.now() / 1000, show.expires_in);
+    }
+
+    record = { updateTs, updateApprox, expiresTs, expiresApprox, expiryHeight };
+  }
+
   res.render('name', {
     name: rawName, displayName: rawName,
-    show, decoded, history: timeline, pending, cached,
+    show, decoded, history: timeline, pending, cached, record,
   });
 });
 
@@ -231,6 +321,11 @@ function sendHealth(req, res) {
 }
 app.get('/health', sendHealth);
 app.get('/api/health', sendHealth);
+
+app.use((req, res) => {
+  res.locals.page = 'error';
+  res.status(404).render('not-found');
+});
 
 module.exports = app;
 

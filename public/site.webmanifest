@@ -1,0 +1,29 @@
+{
+  "name": "Namecoin Explorer",
+  "short_name": "NMC Explorer",
+  "description": "Browse Namecoin names, operations, and blocks.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#fafafa",
+  "theme_color": "#6787B7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "100x100",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "200x200",
+      "purpose": "any"
+    }
+  ]
+}

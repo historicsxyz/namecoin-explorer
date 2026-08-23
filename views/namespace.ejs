@@ -34,7 +34,7 @@
   </table>
   <div class="pager">
     <% if (rows && rows.length>=limit) { %>
-      <a class="btn" href="/namespace/<%= ns %>?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= status?'&status='+status:'' %>"><%= t('ns.next') %></a>
+      <a class="btn" rel="next" href="/namespace/<%= encodeURIComponent(ns) %>?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= status?'&status='+encodeURIComponent(status):'' %>"><%= t('ns.next') %></a>
     <% } %>
   </div>
 </div>

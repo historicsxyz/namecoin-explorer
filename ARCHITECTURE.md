@@ -17,11 +17,12 @@ UI: server-rendered EJS, `public/css/explorer.css` (zinc neutrals, Namecoin blue
 ```
 app.js
 ├─ env, open SQLite, start ingest, listen on NMC_BIND:NMC_EXPLORER_PORT
-├─ middleware     ?lang= / Accept-Language, tip + name count from SQLite
+├─ middleware     ?lang= / Accept-Language, SEO (title/canonical/OG), tip + name count
 └─ routes
    ├─ /                  explorer home (header, namespaces, recent / expiring)
    ├─ /names             registry + FTS5 search
    ├─ /name/:name        name_show + name_pending; timeline from name_ops
+   ├─ /robots.txt /sitemap.xml   crawl hints (landings only; not every name)
    └─ lib/routes.js      operations, namespace, blocks, txs, stats, JSON API
 ```
 
@@ -76,6 +77,10 @@ Polls `getblockchaininfo` every ~10s. Optional `NMC_ZMQ_HASHBLOCK` ticks on `has
 
 `t(key, vars)` on `res.locals`. `?lang=` then `Accept-Language`, default `en`. Catalogs: `locales/en.json`, `locales/de.json`. Name values and txids are not translated.
 
+### `lib/seo.js`
+
+Per-page `<title>`, description, canonical, Open Graph / Twitter, hreflang, and JSON-LD (`Organization` + `WebSite` + `WebPage`). Canonical origin is `NMC_PUBLIC_URL` or `X-Forwarded-Proto` + Host. Search, pagination, `/og`, `/api/`, `/health`, and 404 are `noindex`. `/robots.txt` allows `/` and disallows `/api/` and `/health`. `/sitemap.xml` lists landing pages only (with hreflang) — not the ~780k name URLs. Favicon is the official Namecoin coin mark (CC BY 4.0).
+
 ### `lib/routes.js`
 
 `/operations` reads `name_ops` (filter + hide `NAME_NEW` unless `?commitments=1`). `/operations/pending` is `name_pending` only. `/block` and `/tx` still use RPC for the requested object; name ops on those pages come from `nameOpsFromTx`.
@@ -86,7 +91,7 @@ Polls `getblockchaininfo` every ~10s. Optional `NMC_ZMQ_HASHBLOCK` ticks on `has
 
 ## Frontend
 
-- Shared `views/layout.ejs`: sidebar (Explorer, Name Browser, …), search, theme, footer.
+- Shared `views/layout.ejs`: sidebar (Explorer, Name Browser, …), search, theme, footer. Head tags (title, canonical, OG, favicon) come from `lib/seo.js`.
 - Icons: `views/includes/_icon.ejs` (stroke SVG, `currentColor`).
 - CSS: `public/css/explorer.css`. Bump `?v=` on the stylesheet link when the file changes.
 - Tables use `table-layout: fixed` and ellipsis so long names do not shove columns off-screen.

@@ -8,7 +8,8 @@
     "operations": "Name Operations",
     "blocks": "Blocks",
     "stats": "Statistics",
-    "api": "JSON API"
+    "api": "JSON API",
+    "primary": "Primary"
   },
   "status": {
     "block": "Block",
@@ -28,12 +29,49 @@
   },
   "footer": {
     "by": "by",
+    "sponsored": "Sponsored by",
     "github": "GitHub",
-    "license": "MIT License"
+    "license": "MIT License",
+    "og": "Open Graph"
   },
   "aria": {
     "menu": "Menu",
-    "theme": "Toggle theme"
+    "theme": "Toggle theme",
+    "skip": "Skip to content"
+  },
+  "error": {
+    "title": "Page not found",
+    "lead": "That URL is not a page in this Namecoin explorer.",
+    "home": "Explorer home",
+    "names": "Name Browser"
+  },
+  "seo": {
+    "default": "Self-hosted Namecoin explorer for names, operations, and blocks.",
+    "homeTitle": "Namecoin Explorer — names, operations, and blocks",
+    "home": "Browse the Namecoin name registry: live and expired names, latest blocks, and confirmed name operations.",
+    "names": "Search the Namecoin registry by name, namespace (d/, id/), and expiry status — live, expiring, or expired.",
+    "searchTitle": "Search “{q}”",
+    "search": "Namecoin names matching “{q}”.",
+    "name": "{name} on Namecoin: current value, owner, expiry, and operation history.",
+    "nameTitle": "{name}",
+    "ns": "Namecoin names in the {ns} namespace — live, expiring, and expired records.",
+    "nsTitle": "{ns} names",
+    "operations": "Confirmed Namecoin name operations mined into recent blocks.",
+    "opsPending": "Unconfirmed Namecoin name operations waiting in the mempool.",
+    "blocks": "Recent Namecoin blocks with transaction and name-operation counts.",
+    "block": "Namecoin block {n} — transactions and name operations.",
+    "blockTitle": "Block {n}",
+    "tx": "Namecoin transaction details and any name operations it contains.",
+    "txTitle": "Tx {id}",
+    "stats": "Namecoin registry totals by namespace and current chain height.",
+    "api": "Machine-readable JSON from this Namecoin explorer.",
+    "og": "Open Graph share card for Namecoin Explorer."
+  },
+  "og": {
+    "title": "Open Graph",
+    "alt": "Namecoin Explorer — names, operations, and blocks",
+    "note": "This 1200×630 card is what social apps and messengers show when someone shares a page from this explorer.",
+    "credit": "Coin mark © Namecoin project, CC BY 4.0 —"
   },
   "home": {
     "title": "Namecoin Explorer",
@@ -89,7 +127,7 @@
     "name": "Name",
     "owner": "Owner",
     "lastUpdateTx": "Last update tx",
-    "updatedAt": "Updated at",
+    "updatedAt": "Updated",
     "height": "height {n}",
     "expires": "Expires",
     "blocks": "{n} blocks",
@@ -100,6 +138,11 @@
     "noRecord": "No active record for this name.",
     "pendingOps": "Pending (mempool) Operations",
     "op": "Op"
+  },
+  "time": {
+    "ago": "{t} ago",
+    "in": "in {t}",
+    "approx": "approx."
   },
   "ops": {
     "title": "Name Operations",

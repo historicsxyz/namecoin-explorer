@@ -3,10 +3,10 @@
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
 
 <div class="grid cols-4" style="margin-bottom:18px">
-  <div class="stat"><div class="n"><%= stats.totalNames!=null?nfmt(stats.totalNames):'—' %></div><div class="l"><%= t('stats.totalNames') %></div></div>
-  <div class="stat"><div class="n" style="color:var(--green)"><%= stats.liveNames!=null?nfmt(stats.liveNames):'—' %></div><div class="l"><%= t('stats.live') %></div></div>
-  <div class="stat"><div class="n" style="color:var(--red)"><%= stats.expiredNames!=null?nfmt(stats.expiredNames):'—' %></div><div class="l"><%= t('stats.expired') %></div></div>
-  <div class="stat"><div class="n"><%= stats.chain && stats.chain.blocks ? nfmt(stats.chain.blocks) : '—' %></div><div class="l"><%= t('stats.blockHeight') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n"><%= stats.totalNames!=null?nfmt(stats.totalNames):'—' %></div><div class="l"><%= t('stats.totalNames') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= stats.liveNames!=null?nfmt(stats.liveNames):'—' %></div><div class="l"><%= t('stats.live') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= stats.expiredNames!=null?nfmt(stats.expiredNames):'—' %></div><div class="l"><%= t('stats.expired') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= stats.chain && stats.chain.blocks ? nfmt(stats.chain.blocks) : '—' %></div><div class="l"><%= t('stats.blockHeight') %></div></div>
 </div>
 
 <div class="panel">

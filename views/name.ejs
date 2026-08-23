@@ -1,7 +1,5 @@
 <div class="topbar">
   <h1 class="mono"><%= name %></h1>
-  <span class="crumb"><%= t('name.record') %></span>
-  <span class="crumb"><a href="/names"><%= t('name.backRegistry') %></a></span>
 </div>
 
 <% if (typeof nameError !== 'undefined' && nameError && nameError.toLowerCase().includes('expired')) { %>
@@ -11,32 +9,42 @@
 <% } %>
 
 <% if (show) { %>
-<div class="panel">
-  <h2><%- include('includes/_icon', {icon:'database'}) %> <%= t('name.currentRecord') %></h2>
-  <dl class="dl">
-    <dt><%= t('name.name') %></dt><dd><%= show.name %></dd>
-    <dt><%= t('name.owner') %></dt><dd><a href="/tx/<%= show.txid %>"><%= show.address %></a></dd>
-    <dt><%= t('name.lastUpdateTx') %></dt><dd><a href="/tx/<%= show.txid %>"><%= show.txid %></a></dd>
-    <dt><%= t('name.updatedAt') %></dt><dd><%= t('name.height', { n: nfmt(show.height) }) %></dd>
-    <dt><%= t('name.expires') %></dt><dd><%= t('name.blocks', { n: nfmt(show.expires_in) }) %>
-      <% const ek = expiryKind(show); %>
-      <span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span>
-    </dd>
-  </dl>
+<% const ek = expiryKind(show); const rec = typeof record !== 'undefined' && record ? record : {}; %>
+<div class="panel record-card">
+  <h2>
+    <%- include('includes/_icon', {icon:'database'}) %> <%= t('name.currentRecord') %>
+    <span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %> record-status"><%= t('status.' + ek) %></span>
+  </h2>
+  <div class="record-grid">
+    <div class="record-field">
+      <span class="l"><%= t('name.name') %></span>
+      <span class="v mono"><%= show.name %></span>
+    </div>
+    <div class="record-field">
+      <span class="l"><%= t('name.owner') %></span>
+      <span class="v mono"><% if (show.address) { %><a href="/tx/<%= show.txid %>" title="<%= show.address %>"><%= shortId(show.address) %></a><% } else { %>—<% } %></span>
+    </div>
+    <div class="record-field">
+      <span class="l"><%= t('name.updatedAt') %></span>
+      <span class="v"><%= rec.updateTs ? fmtUtc(rec.updateTs, lang) : '—' %></span>
+      <span class="s"><% const ru = rec.updateTs ? relDur(rec.updateTs) : null; %><% if (ru) { %><%= rec.updateApprox ? t('time.approx') + ' ' : '' %><%= t(ru.future ? 'time.in' : 'time.ago', { t: ru.t }) %> · <% } %><%= t('name.height', { n: nfmt(show.height) }) %></span>
+    </div>
+    <div class="record-field">
+      <span class="l"><%= t('name.expires') %></span>
+      <span class="v"><%= rec.expiresTs ? fmtUtc(rec.expiresTs, lang) : '—' %></span>
+      <span class="s"><% const re = rec.expiresTs ? relDur(rec.expiresTs) : null; %><% if (re) { %><%= rec.expiresApprox ? t('time.approx') + ' ' : '' %><%= t(re.future ? 'time.in' : 'time.ago', { t: re.t }) %> · <% } %><%= t('name.blocks', { n: nfmt(show.expires_in) }) %></span>
+    </div>
+    <div class="record-field record-span">
+      <span class="l"><%= t('name.lastUpdateTx') %></span>
+      <span class="v mono"><% if (show.txid) { %><a href="/tx/<%= show.txid %>" title="<%= show.txid %>"><%= shortId(show.txid, 12, 10) %></a><% } else { %>—<% } %></span>
+    </div>
+  </div>
 </div>
 
   <% if (decoded) { %>
   <div class="panel">
     <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('name.value') %></h2>
-    <% if (decoded.kind==='json' && decoded.table) { %>
-      <div class="dl" style="margin-bottom:12px">
-        <% decoded.table.forEach(row => { %>
-          <dt class="mono"><%= row.label %></dt>
-          <dd class="mono"><%= row.isObject ? '' : row.value %><% if (row.isObject) { %><span class="value" style="max-height:120px"><%= row.value %></span><% } %></dd>
-        <% }) %>
-      </div>
-    <% } %>
-    <div class="value"><%= (decoded.raw || (show.value||'')) %></div>
+    <%- include('includes/_value', { decoded: decoded, fallback: show.value || '' }) %>
   </div>
   <% } %>
 
@@ -57,12 +65,17 @@
             <span class="tl-height">blk <%= nfmt(h.height) %></span>
           </div>
           <div class="tl-body">
-            <% if (h.address) { %>→ <a href="/tx/<%= h.txid||'#' %>" class="mono"><%= h.address.slice(0,14) %>…</a><% } %>
-            <% if (h.txid) { %><span class="dim">· <a href="/tx/<%= h.txid %>" class="mono"><%= h.txid.slice(0,10) %>…</a></span><% } %>
+            <% if (h.address) { %>→ <a href="/tx/<%= h.txid||'#' %>" class="mono" title="<%= h.address %>"><%= shortId(h.address) %></a><% } %>
+            <% if (h.txid) { %><span class="dim">· <a href="/tx/<%= h.txid %>" class="mono" title="<%= h.txid %>"><%= shortId(h.txid, 12, 8) %></a></span><% } %>
             <% if (h.inferred) { %><span class="pill gray" style="font-size:10px"><%= t('name.inferred') %></span><% } %>
           </div>
-          <% if (h.value) { %>
-          <div class="tl-value mono"><span class="dim"><%= t('name.value') %></span> <%= String(h.value) %></div>
+          <% if (h.value) { const hv = renderValue({ value: h.value }); %>
+          <% if (hv && hv.kind !== 'empty') { %>
+          <div class="tl-value-block">
+            <span class="l"><%= t('name.value') %></span>
+            <%- include('includes/_value', { decoded: hv, compact: true }) %>
+          </div>
+          <% } %>
           <% } %>
         </div>
       </div>

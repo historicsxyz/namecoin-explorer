@@ -40,7 +40,7 @@
   </table>
   <div class="pager">
     <% if (rows && rows.length>=limit) { %>
-      <a class="btn" href="/names?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= ns?'&ns='+ns:'' %><%= status?'&status='+status:'' %> <%= q?'&q='+q:'' %>"><%= t('names.next') %></a>
+      <a class="btn" rel="next" href="/names?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= ns?'&ns='+encodeURIComponent(ns):'' %><%= status?'&status='+encodeURIComponent(status):'' %><%= q?'&q='+encodeURIComponent(q):'' %>"><%= t('names.next') %></a>
     <% } %>
     <span class="muted"><%= t('names.shown', { n: rows?.length||0 }) %></span>
   </div>

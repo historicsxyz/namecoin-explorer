@@ -8,7 +8,8 @@
     "operations": "Namenoperationen",
     "blocks": "Blöcke",
     "stats": "Statistik",
-    "api": "JSON-API"
+    "api": "JSON-API",
+    "primary": "Hauptnavigation"
   },
   "status": {
     "block": "Block",
@@ -28,12 +29,49 @@
   },
   "footer": {
     "by": "von",
+    "sponsored": "Gesponsert von",
     "github": "GitHub",
-    "license": "MIT-Lizenz"
+    "license": "MIT-Lizenz",
+    "og": "Open Graph"
   },
   "aria": {
     "menu": "Menü",
-    "theme": "Darstellung umschalten"
+    "theme": "Darstellung umschalten",
+    "skip": "Zum Inhalt springen"
+  },
+  "error": {
+    "title": "Seite nicht gefunden",
+    "lead": "Diese Adresse ist keine Seite in diesem Namecoin-Explorer.",
+    "home": "Explorer-Start",
+    "names": "Namenbrowser"
+  },
+  "seo": {
+    "default": "Selbst gehosteter Namecoin-Explorer für Namen, Operationen und Blöcke.",
+    "homeTitle": "Namecoin Explorer — Namen, Operationen und Blöcke",
+    "home": "Namecoin-Namensregister durchsuchen: aktive und abgelaufene Namen, aktuelle Blöcke und bestätigte Namenoperationen.",
+    "names": "Das Namecoin-Register nach Name, Namensraum (d/, id/) und Ablaufstatus durchsuchen — aktiv, läuft ab oder abgelaufen.",
+    "searchTitle": "Suche „{q}“",
+    "search": "Namecoin-Namen zu „{q}“.",
+    "name": "{name} auf Namecoin: aktueller Wert, Eigentümer, Ablauf und Operationsverlauf.",
+    "nameTitle": "{name}",
+    "ns": "Namecoin-Namen im Namensraum {ns} — aktiv, bald ablaufend und abgelaufen.",
+    "nsTitle": "{ns} Namen",
+    "operations": "Bestätigte Namecoin-Namenoperationen aus kürzlich geminten Blöcken.",
+    "opsPending": "Unbestätigte Namecoin-Namenoperationen im Mempool.",
+    "blocks": "Aktuelle Namecoin-Blöcke mit Transaktions- und Namenoperationszahlen.",
+    "block": "Namecoin-Block {n} — Transaktionen und Namenoperationen.",
+    "blockTitle": "Block {n}",
+    "tx": "Namecoin-Transaktion und enthaltene Namenoperationen.",
+    "txTitle": "Tx {id}",
+    "stats": "Namecoin-Registersummen nach Namensraum und aktueller Blockhöhe.",
+    "api": "Maschinenlesbares JSON dieses Namecoin-Explorers.",
+    "og": "Open-Graph-Karte für Namecoin Explorer."
+  },
+  "og": {
+    "title": "Open Graph",
+    "alt": "Namecoin Explorer — Namen, Operationen und Blöcke",
+    "note": "Diese 1200×630-Karte zeigen soziale Apps und Messenger, wenn jemand eine Seite dieses Explorers teilt.",
+    "credit": "Münzzeichen © Namecoin-Projekt, CC BY 4.0 —"
   },
   "home": {
     "title": "Namecoin Explorer",
@@ -89,7 +127,7 @@
     "name": "Name",
     "owner": "Inhaber",
     "lastUpdateTx": "Letzte Update-Tx",
-    "updatedAt": "Aktualisiert bei",
+    "updatedAt": "Aktualisiert",
     "height": "Höhe {n}",
     "expires": "Läuft ab",
     "blocks": "{n} Blöcke",
@@ -100,6 +138,11 @@
     "noRecord": "Kein aktiver Eintrag für diesen Namen.",
     "pendingOps": "Ausstehende (Mempool-)Operationen",
     "op": "Op"
+  },
+  "time": {
+    "ago": "vor {t}",
+    "in": "in {t}",
+    "approx": "ca."
   },
   "ops": {
     "title": "Namenoperationen",

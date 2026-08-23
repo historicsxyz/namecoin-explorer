@@ -72,6 +72,7 @@ See [`.env.example`](.env.example).
 |----------|---------|-------------|
 | `NMC_EXPLORER_PORT` | `3100` | HTTP port |
 | `NMC_BIND` | `127.0.0.1` | Listen address. Keep loopback; put Caddy/nginx in front |
+| `NMC_PUBLIC_URL` | *(inferred)* | Public origin for canonical, Open Graph, and sitemap URLs. Example: `https://nmc.historics.xyz` |
 | `NMC_RPC_HOST` | `127.0.0.1` | namecoind JSON-RPC host |
 | `NMC_RPC_PORT` | `8336` | namecoind JSON-RPC port |
 | `NMC_RPC_USER` | `hermes` | Used only if there is no cookie |

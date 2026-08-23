@@ -1,0 +1,14 @@
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'image'}) %> <%= t('og.title') %></h1></div>
+
+<div class="panel og-panel">
+  <div class="og-stage">
+    <img src="/og.svg?v=4" width="1200" height="630" alt="<%= t('og.alt') %>">
+  </div>
+  <p class="og-note"><%= t('og.note') %></p>
+  <p class="og-credit muted">
+    <%= t('og.credit') %>
+    <a href="https://github.com/namecoin/namecoin-graphics" rel="noopener" target="_blank">namecoin-graphics</a>
+    · <a href="/og.svg">og.svg</a>
+    · <a href="/og.png">og.png</a>
+  </p>
+</div>

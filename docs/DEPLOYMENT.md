@@ -39,6 +39,7 @@ cd namecoin-explorer
 npm install --omit=dev
 cp .env.example .env
 # NMC_BIND=127.0.0.1  NMC_COOKIE_PATH=…  NMC_CACHE_DB=…
+# NMC_PUBLIC_URL=https://nmc.example.org   # canonical / Open Graph / sitemap
 npm start
 # http://127.0.0.1:3100
 ```

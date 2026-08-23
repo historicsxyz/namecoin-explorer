@@ -5,10 +5,12 @@ const assert = require('node:assert/strict');
 const {
   NAME_EXPIRY_DEPTH,
   SEMI_EXPIRE_WINDOW,
+  TARGET_BLOCK_SEC,
   expiresIn,
   isExpired,
   isSemiExpired,
   expiryStatus,
+  shiftByBlocks,
   parseNamespace,
 } = require('../lib/expiry');
 
@@ -31,6 +33,13 @@ describe('expiry', () => {
     assert.equal(expiresIn(1000, 37000), 0);
     assert.equal(isExpired(1000, 37001), true);
     assert.equal(expiryStatus(1000, 37001), 'expired');
+  });
+
+  it('estimates unix time from a 10-minute block target', () => {
+    assert.equal(TARGET_BLOCK_SEC, 600);
+    assert.equal(shiftByBlocks(1_000_000, 2), 1_001_200);
+    assert.equal(shiftByBlocks(1_000_000, -1), 999_400);
+    assert.equal(shiftByBlocks(null, 10), null);
   });
 });
 
