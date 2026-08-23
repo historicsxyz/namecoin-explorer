@@ -33,7 +33,7 @@ body:
     id: env
     attributes:
       label: Environment
-      description: Browser/OS (and Node.js if self-hosted), explorer version/commit.
+      description: Browser/OS, Node.js if self-hosted, commit or whether you used https://nmc.historics.xyz.
     validations:
       required: false
   - type: textarea

@@ -38,7 +38,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm install --no-audit --no-fund
-      - name: Run tests (if present)
-        run: npm test 2>&1 || echo "no test runner configured yet — see CONTRIBUTING.md"
+      - name: Run tests
+        run: npm test
   # NOTE: A namecoind fixture is not launched in CI today. Tests that hit a live
   # node run only in a self-hosted/dev environment. See CONTRIBUTING.md.

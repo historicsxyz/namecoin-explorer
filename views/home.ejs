@@ -1,30 +1,42 @@
-<div class="topbar"><h1>Namecoin Explorer</h1><span class="crumb">decentralized naming · DNS · identities · all on-chain</span></div>
+<section class="hero">
+  <h1><%- include('includes/_icon', {icon:'compass'}) %> <%= t('home.title') %></h1>
+</section>
 
 <div class="grid cols-4">
-  <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= latest ? nfmt(latest) : '—' %></div><div class="l">Block height</div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n" id="st-total"><%= (namespaces||[]).reduce((a,r)=>a+r.total,0) %></div><div class="l">Total names</div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= (namespaces||[]).reduce((a,r)=>a+(r.live||0),0) %></div><div class="l">Live names</div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= (namespaces||[]).reduce((a,r)=>a+(r.expired||0),0) %></div><div class="l">Expired</div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= latest ? nfmt(latest) : '—' %></div><div class="l"><%= t('home.blockHeight') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n" id="st-total"><%= (namespaces||[]).reduce((a,r)=>a+r.total,0) %></div><div class="l"><%= t('home.totalNames') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= (namespaces||[]).reduce((a,r)=>a+(r.live||0),0) %></div><div class="l"><%= t('home.liveNames') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= (namespaces||[]).reduce((a,r)=>a+(r.expired||0),0) %></div><div class="l"><%= t('home.expired') %></div></div>
 </div>
 
 <div class="grid cols-2">
-  <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'blocks'}) %> Latest Block</h2>
+  <div class="panel latest-block">
+    <h2>
+      <%- include('includes/_icon', {icon:'blocks'}) %> <%= t('home.latestBlock') %>
+      <% if (block) { %><a class="btn btn-ghost latest-block-link" href="/block/<%= block.hash %>"><%= t('home.viewBlock') %></a><% } %>
+    </h2>
     <% if (block) { %>
     <dl class="dl">
-      <dt>Height</dt><dd><a href="/block/<%= block.hash %>"><%= block.height.toLocaleString() %></a></dd>
-      <dt>Hash</dt><dd><a href="/block/<%= block.hash %>"><%= block.hash.slice(0,28) %>…</a></dd>
-      <dt>Time</dt><dd><%= new Date(block.time*1000).toUTCString() %></dd>
-      <dt>Transactions</dt><dd><%= block.nTx %></dd>
-      <dt>Merkle</dt><dd class="mono"><%= block.merkleroot.slice(0,20) %>…</dd>
+      <dt><%= t('home.height') %></dt>
+      <dd><a href="/block/<%= block.hash %>"><%= nfmt(block.height) %></a> <span class="dim"><%= timeAgo(block.time) %></span></dd>
+      <dt><%= t('home.hash') %></dt>
+      <dd class="mono"><a href="/block/<%= block.hash %>" title="<%= block.hash %>"><%= block.hash.slice(0, 28) %>…</a></dd>
+      <dt><%= t('home.transactions') %></dt>
+      <dd><%= block.nTx != null ? nfmt(block.nTx) : '—' %></dd>
+      <dt><%= t('home.nameOps') %></dt>
+      <dd><%= nfmt(block.nameOpCount || 0) %></dd>
+      <dt><%= t('home.sincePrev') %></dt>
+      <dd><%= fmtDuration(block.intervalSec) %></dd>
+      <dt><%= t('home.previous') %></dt>
+      <dd><% if (block.prev) { %><a href="/block/<%= block.prev %>"><%= block.prevHeight != null ? nfmt(block.prevHeight) : block.prev.slice(0, 20) + '…' %></a><% } else { %>—<% } %></dd>
     </dl>
-    <% } else { %><p class="muted">Awaiting block data…</p><% } %>
+    <% } else { %><p class="muted"><%= t('home.awaitingBlock') %></p><% } %>
   </div>
 
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'layers'}) %> Namespaces</h2>
+    <h2><%- include('includes/_icon', {icon:'layers'}) %> <%= t('home.namespaces') %></h2>
     <table>
-      <thead><tr><th>Prefix</th><th>Total</th><th>Live</th><th>Expired</th></tr></thead>
+      <thead><tr><th><%= t('home.prefix') %></th><th><%= t('home.total') %></th><th><%= t('home.live') %></th><th><%= t('home.expired') %></th></tr></thead>
       <tbody>
         <% (namespaces||[]).slice(0,8).forEach(r => { %>
         <tr>
@@ -41,15 +53,15 @@
 
 <div class="grid cols-2">
   <div class="panel">
-      <h2><%- include('includes/_icon', {icon:'activity'}) %> Recently Updated</h2>
+      <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('home.recentlyUpdated') %></h2>
     <table>
-      <thead><tr><th>Name</th><th>Height</th><th>Status</th></tr></thead>
+      <thead><tr><th><%= t('home.name') %></th><th><%= t('home.height') %></th><th><%= t('home.status') %></th></tr></thead>
       <tbody>
         <% (recent||[]).slice(0,8).forEach(r => { %>
         <tr>
-          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
           <td><%= nfmt(r.height) %></td>
-          <td><% if (r.expired) { %><span class="pill red">expired</span><% } else if (r.expires_in && r.expires_in<1000) { %><span class="pill yellow">expiring</span><% } else { %><span class="pill green">live</span><% } %></td>
+          <td><% const ek = expiryKind(r); %><span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span></td>
         </tr>
         <% }) %>
       </tbody>
@@ -57,13 +69,13 @@
   </div>
 
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'clock'}) %> Expiring Soon</h2>
+    <h2><%- include('includes/_icon', {icon:'clock'}) %> <%= t('home.expiringSoon') %></h2>
     <table>
-      <thead><tr><th>Name</th><th>Expires in (blk)</th></tr></thead>
+      <thead><tr><th><%= t('home.name') %></th><th><%= t('home.expiresInBlks') %></th></tr></thead>
       <tbody>
         <% (expiring||[]).slice(0,8).forEach(r => { %>
         <tr>
-          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+          <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
           <td class="mono" style="color:var(--yellow)"><%= nfmt(r.expires_in) %></td>
         </tr>
         <% }) %>

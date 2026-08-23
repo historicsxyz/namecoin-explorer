@@ -1,0 +1,6 @@
+<div class="topbar">
+  <h1><%- include('includes/_icon', {icon:'code'}) %> <%= t('api.title') %></h1>
+  <span class="crumb"><%= path %> · <a href="<%= path + (path.indexOf('?') >= 0 ? '&' : '?') + 'format=json' %>"><%= t('api.rawLink') %></a></span>
+</div>
+<p class="muted" style="margin:0 0 12px"><%= t('api.hint', { path: path }) %></p>
+<pre class="value api-json"><%= payload %></pre>

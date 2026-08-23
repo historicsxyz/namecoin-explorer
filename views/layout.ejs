@@ -1,18 +1,25 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="<%= typeof lang !== 'undefined' ? lang : 'en' %>" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= typeof title !== 'undefined' && title ? title + ' · ' : '' %>Namecoin Explorer</title>
-  <link rel="stylesheet" href="/vendor/bulma.min.css">
-  <link rel="stylesheet" href="/css/brutalist.css">
+  <link rel="stylesheet" href="/css/explorer.css?v=22">
+  <script>
+    try {
+      var savedTheme = localStorage.getItem('nmc-theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <!-- mobile header / app bar (mobile only) -->
   <header class="mobile-header">
     <button id="menu-btn" class="mh-btn" type="button" aria-label="Menu">☰</button>
     <a href="/" class="mh-title"><%- include('includes/_logo', {}) %></a>
-    <button id="theme-btn" class="mh-btn" type="button" aria-label="Toggle theme">
+    <button id="theme-btn" class="mh-btn" type="button" data-theme-toggle aria-label="<%= t('aria.theme') %>">
       <%- include('includes/_icon', {icon:'sun'}) %>
       <%- include('includes/_icon', {icon:'moon'}) %>
     </button>
@@ -24,27 +31,61 @@
   <aside class="sidebar" id="sidebar">
     <a href="/" class="brand"><%- include('includes/_logo', {}) %></a>
     <nav class="nav">
-      <a class="<%= locals.page==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'home'}) %><span>Home</span></a>
-      <a class="<%= locals.page==='names'?'active':'' %>" href="/names"><%- include('includes/_icon', {icon:'search'}) %><span>Name Browser</span></a>
-      <a class="<%= locals.page==='operations'?'active':'' %>" href="/operations"><%- include('includes/_icon', {icon:'activity'}) %><span>Name Operations</span></a>
-      <a class="<%= locals.page==='blocks'?'active':'' %>" href="/blocks"><%- include('includes/_icon', {icon:'blocks'}) %><span>Blocks</span></a>
-      <a class="<%= locals.page==='txs'?'active':'' %>" href="/stats"><%- include('includes/_icon', {icon:'chart'}) %><span>Statistics</span></a>
-      <a href="/api/stats"><%- include('includes/_icon', {icon:'code'}) %><span>JSON API</span></a>
+      <a class="<%= locals.page==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'compass'}) %><span><%= t('nav.home') %></span></a>
+      <a class="<%= locals.page==='names'?'active':'' %>" href="/names"><%- include('includes/_icon', {icon:'search'}) %><span><%= t('nav.names') %></span></a>
+      <a class="<%= locals.page==='operations'?'active':'' %>" href="/operations"><%- include('includes/_icon', {icon:'activity'}) %><span><%= t('nav.operations') %></span></a>
+      <a class="<%= locals.page==='blocks'?'active':'' %>" href="/blocks"><%- include('includes/_icon', {icon:'blocks'}) %><span><%= t('nav.blocks') %></span></a>
+      <a class="<%= locals.page==='stats'?'active':'' %>" href="/stats"><%- include('includes/_icon', {icon:'chart'}) %><span><%= t('nav.stats') %></span></a>
+      <a class="<%= locals.page==='api'?'active':'' %>" href="/api/stats"><%- include('includes/_icon', {icon:'code'}) %><span><%= t('nav.api') %></span></a>
     </nav>
-    <div class="status-box">
-      <div class="row"><span class="k">Block</span><span class="v" id="block-n">0</span></div>
-      <div class="row"><span class="k">Names</span><span class="v" id="name-n">0</span></div>
-      <div class="row"><span class="k">Chain</span><span class="v" id="chain"><%= (locals.chainInfo&&locals.chainInfo.chain)||'-' %></span></div>
-      <div class="row"><span class="k">Sync</span><span class="v" id="sync"><%= (locals.chainInfo&&locals.chainInfo.initialblockdownload)?'syncing':'ready' %></span></div>
+    <div class="sidebar-dock">
+      <div class="status-box">
+        <div class="status-cell">
+          <span class="k"><%- include('includes/_icon', {icon:'blocks'}) %> <%= t('status.block') %></span>
+          <span class="v" id="block-n">0</span>
+        </div>
+        <div class="status-cell">
+          <span class="k"><%- include('includes/_icon', {icon:'tag'}) %> <%= t('status.names') %></span>
+          <span class="v" id="name-n">0</span>
+        </div>
+        <div class="status-cell">
+          <span class="k"><%- include('includes/_icon', {icon:'layers'}) %> <%= t('status.chain') %></span>
+          <span class="v" id="chain"><%= (locals.chainInfo&&locals.chainInfo.chain)||'-' %></span>
+        </div>
+        <div class="status-cell">
+          <span class="k"><%- include('includes/_icon', {icon: (locals.chainInfo&&locals.chainInfo.initialblockdownload) ? 'clock' : 'check'}) %> <%= t('status.sync') %></span>
+          <span class="v" id="sync"><%= (locals.chainInfo&&locals.chainInfo.initialblockdownload)?t('status.syncing'):t('status.ready') %></span>
+        </div>
+      </div>
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="<%= t('aria.theme') %>">
+        <%- include('includes/_icon', {icon:'sun'}) %>
+        <%- include('includes/_icon', {icon:'moon'}) %>
+        <span><%= t('aria.theme') %></span>
+      </button>
     </div>
   </aside>
   <main class="main">
     <div class="search">
-      <input type="text" placeholder="SEARCH NAME — e.g. d/bitcoin, u/steven…">
+      <input type="text" placeholder="<%= t('search.placeholder') %>">
       <div class="search-results" style="display:none"></div>
     </div>
     <%- body %>
-    <footer>self-hosted namecoin explorer v2 · queries own full node · registry cached</footer>
+    <footer class="site-footer">
+      <p class="site-footer-brand">
+        <a href="https://historics.xyz" rel="noopener" target="_blank">Historics.xyz</a>
+        <span><%= t('footer.by') %> <a href="https://github.com/0xschatz" rel="noopener" target="_blank">0xschatz</a></span>
+      </p>
+      <nav class="site-footer-links">
+        <a href="https://github.com/historicsxyz/namecoin-explorer" rel="noopener" target="_blank">
+          <%- include('includes/_icon', {icon:'github'}) %>
+          <%= t('footer.github') %>
+        </a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/historicsxyz/namecoin-explorer/blob/main/LICENSE" rel="noopener" target="_blank"><%= t('footer.license') %></a>
+        <span aria-hidden="true">·</span>
+        <span>© <%= new Date().getFullYear() %></span>
+      </nav>
+    </footer>
   </main>
   </div>
 
@@ -76,42 +117,41 @@
     // Wrap every bare <table> in a horizontal-scroll container so long
     // tables don't blow up the viewport on phones.
     (function wrapTables() {
-      document.querySelectorAll('table').forEach((t) => {
-        if (t.parentElement && t.parentElement.classList.contains('table-wrap')) return;
-        const w = document.createElement('div');
-        w.className = 'table-wrap';
-        t.parentNode.insertBefore(w, t);
-        w.appendChild(t);
-      });
+      try {
+        document.querySelectorAll('table').forEach((t) => {
+          if (!t.parentNode) return;
+          if (t.parentElement && t.parentElement.classList.contains('table-wrap')) return;
+          const w = document.createElement('div');
+          w.className = 'table-wrap';
+          t.parentNode.insertBefore(w, t);
+          w.appendChild(t);
+        });
+      } catch (e) {}
     })();
 
     // ---------- theme ----------
     (function theme() {
       const root = document.documentElement;
       const KEY = 'nmc-theme';
-      // resolve initial: stored > system pref > dark
-      let theme = localStorage.getItem(KEY);
-      if (!theme) theme = 'light'; // light is the default state
-      root.setAttribute('data-theme', theme);
-      const btn = document.getElementById('theme-btn');
-      const setIcons = () => {
-        // show sun when light (tapping -> dark), moon when dark
-        const isLight = root.getAttribute('data-theme') === 'light';
-        const icons = Array.from(document.querySelectorAll('#theme-btn .nav-ico'));
-        if (icons.length === 2) {
-          icons[0].style.display = isLight ? 'block' : 'none'; // sun
-          icons[1].style.display = isLight ? 'none' : 'block'; // moon
-        }
+      const read = () => {
+        try { return localStorage.getItem(KEY); } catch (e) { return null; }
       };
-      if (btn) {
-        btn.addEventListener('click', () => {
-          const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-          root.setAttribute('data-theme', next);
-          localStorage.setItem(KEY, next);
-          setIcons();
+      const write = (name) => {
+        try { localStorage.setItem(KEY, name); } catch (e) {}
+      };
+      const apply = (name) => {
+        const next = name === 'dark' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        write(next);
+      };
+      apply(read() || root.getAttribute('data-theme') || 'light');
+      document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
         });
-      }
-      setIcons();
+      });
     })();
 
     // ---------- status ----------
@@ -133,7 +173,7 @@
           try {
             const r = await fetch('/api/search?q=' + encodeURIComponent(q));
             const j = await r.json();
-            sresults.innerHTML = (j.items||[]).map(i=>`<a href="/name/${encodeURIComponent(i.name)}">${i.name}</a>`).join('') || '<div class="empty">no match</div>';
+            sresults.innerHTML = (j.items||[]).map(i=>`<a href="/name/${encodeURIComponent(i.name)}">${i.name}</a>`).join('') || <%- JSON.stringify('<div class="empty">' + t('search.noMatch') + '</div>') %>;
             sresults.style.display = 'block';
           } catch(e) {}
         }, 250);

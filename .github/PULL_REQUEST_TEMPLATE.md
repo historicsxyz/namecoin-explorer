@@ -1,6 +1,6 @@
 ## What does this PR do?
 
-A short, focused description of the change and the problem it solves.
+A short description of the change and why.
 
 ## Related issue(s)
 
@@ -8,18 +8,18 @@ Fixes #___
 
 ## Changes
 
-- [ ] Feature/fix added/changed
-- [ ] Docs updated
-- [ ] Tests added/updated (if applicable)
-- [ ] Verified against a Namecoin node (if backend change)
+- [ ] Feature / fix
+- [ ] Docs (`README`, `ARCHITECTURE`, `docs/DEPLOYMENT`, or `CONTRIBUTING`)
+- [ ] Tests (`npm test`)
+- [ ] UI: stylesheet `?v=` bumped if `explorer.css` changed
+- [ ] Locales: both `en.json` and `de.json` if a string changed
 
 ## How was this tested?
 
-Describe how you verified — e.g. curl against a local node, browser screenshot,
-`node --check` on changed JS. Screenshots welcome.
+`npm test`, `curl` against `/api/health`, and — for UI — the affected routes in the browser (not only a screenshot).
 
 ## Checklist
 
-- [ ] I read [CONTRIBUTING.md](../CONTRIBUTING.md) and the [Code of Conduct](../CODE_OF_CONDUCT.md)
-- [ ] No credentials / secrets added
-- [ ] Change is focused (small, reviewable PR)
+- [ ] [CONTRIBUTING.md](../CONTRIBUTING.md) and [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [ ] No credentials or `.env` secrets
+- [ ] Focused, reviewable diff

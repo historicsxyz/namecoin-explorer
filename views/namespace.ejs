@@ -1,39 +1,40 @@
-<div class="topbar"><h1 class="mono">ns/<%= ns %></h1><span class="crumb">namespace</span></div>
+<div class="topbar"><h1 class="mono">ns/<%= ns %></h1><span class="crumb"><%= t('ns.namespace') %></span></div>
 
 <div class="grid cols-4" style="margin-bottom:18px">
-  <div class="stat"><div class="n"><%= nfmt(info.total||0) %></div><div class="l">Total <%= ns %>/ names</div></div>
-  <div class="stat"><div class="n" style="color:var(--green)"><%= nfmt(info.live||0) %></div><div class="l">Live</div></div>
-  <div class="stat"><div class="n" style="color:var(--red)"><%= nfmt(info.expired||0) %></div><div class="l">Expired</div></div>
+  <div class="stat"><div class="n"><%= nfmt(info.total||0) %></div><div class="l"><%= t('ns.totalNames', { ns: ns }) %></div></div>
+  <div class="stat"><div class="n" style="color:var(--green)"><%= nfmt(info.live||0) %></div><div class="l"><%= t('ns.live') %></div></div>
+  <div class="stat"><div class="n" style="color:var(--red)"><%= nfmt(info.expired||0) %></div><div class="l"><%= t('ns.expired') %></div></div>
 </div>
 
 <div class="filterbar">
-  <form action="/namespace/<%= ns %>" method="get" style="display:flex;gap:8px;align-items:center">
+  <form action="/namespace/<%= ns %>" method="get">
     <select name="status" onchange="this.form.submit()">
-      <option value="">All status</option>
-      <option value="live" <%= status==='live'?'selected':'' %>>Live</option>
-      <option value="expired" <%= status==='expired'?'selected':'' %>>Expired</option>
+      <option value=""><%= t('ns.allStatus') %></option>
+      <option value="live" <%= status==='live'?'selected':'' %>><%= t('ns.live') %></option>
+      <option value="expiring" <%= status==='expiring'?'selected':'' %>><%= t('ns.expiringSoon') %></option>
+      <option value="expired" <%= status==='expired'?'selected':'' %>><%= t('ns.expired') %></option>
     </select>
   </form>
 </div>
 
 <div class="panel">
-  <table>
-    <thead><tr><th>Name</th><th>Value</th><th>Updated</th><th>Expires in</th><th>Status</th></tr></thead>
+  <table class="names-table cols-5">
+    <thead><tr><th><%= t('ns.name') %></th><th><%= t('ns.value') %></th><th><%= t('ns.updated') %></th><th><%= t('ns.expiresIn') %></th><th><%= t('ns.status') %></th></tr></thead>
     <tbody>
       <% (rows||[]).forEach(r => { %>
       <tr>
-        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
         <td class="mono" style="max-width:240px;overflow:hidden;text-overflow:ellipsis"><%= (r.value||'').slice(0,40) %></td>
         <td><%= nfmt(r.height) %></td>
         <td class="mono"><%= r.expires_in!=null?nfmt(r.expires_in):'—' %></td>
-        <td><% if (r.expired) { %><span class="pill red">expired</span><% } else { %><span class="pill green">live</span><% } %></td>
+        <td><% const ek = expiryKind(r); %><span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span></td>
       </tr>
       <% }) %>
     </tbody>
   </table>
   <div class="pager">
     <% if (rows && rows.length>=limit) { %>
-      <a class="btn" href="/namespace/<%= ns %>?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= status?'&status='+status:'' %>">Next →</a>
+      <a class="btn" href="/namespace/<%= ns %>?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= status?'&status='+status:'' %>"><%= t('ns.next') %></a>
     <% } %>
   </div>
 </div>

@@ -1,35 +1,38 @@
 <div class="topbar">
   <h1 class="mono"><%= name %></h1>
-  <span class="crumb">name record</span>
-  <span class="crumb"><a href="/names">← registry</a></span>
+  <span class="crumb"><%= t('name.record') %></span>
+  <span class="crumb"><a href="/names"><%= t('name.backRegistry') %></a></span>
 </div>
 
 <% if (typeof nameError !== 'undefined' && nameError && nameError.toLowerCase().includes('expired')) { %>
-  <div class="error">This name is EXPIRED and no longer owned. It may be re-registered by anyone.</div>
+  <div class="error"><%= t('name.expiredBanner') %></div>
 <% } else if (typeof nameError !== 'undefined' && nameError) { %>
   <div class="error"><%= nameError %></div>
 <% } %>
 
 <% if (show) { %>
 <div class="panel">
-  <h2><%- include('includes/_icon', {icon:'database'}) %> Current Record</h2>
+  <h2><%- include('includes/_icon', {icon:'database'}) %> <%= t('name.currentRecord') %></h2>
   <dl class="dl">
-    <dt>Name</dt><dd><%= show.name %></dd>
-    <dt>Owner</dt><dd><a href="/tx/<%= show.txid %>"><%= show.address %></a> <% if (show.ismine) { %><span class="pill blue">yours</span><% } %></dd>
-    <dt>Last update tx</dt><dd><a href="/tx/<%= show.txid %>"><%= show.txid %></a></dd>
-    <dt>Updated at</dt><dd>height <%= nfmt(show.height) %></dd>
-    <dt>Expires</dt><dd><%= nfmt(show.expires_in) %> blocks <% if (show.expired) { %><span class="pill red">expired</span><% } else if (show.expires_in && show.expires_in<1000) { %><span class="pill yellow">expiring</span><% } else { %><span class="pill green">live</span><% } %></dd>
+    <dt><%= t('name.name') %></dt><dd><%= show.name %></dd>
+    <dt><%= t('name.owner') %></dt><dd><a href="/tx/<%= show.txid %>"><%= show.address %></a></dd>
+    <dt><%= t('name.lastUpdateTx') %></dt><dd><a href="/tx/<%= show.txid %>"><%= show.txid %></a></dd>
+    <dt><%= t('name.updatedAt') %></dt><dd><%= t('name.height', { n: nfmt(show.height) }) %></dd>
+    <dt><%= t('name.expires') %></dt><dd><%= t('name.blocks', { n: nfmt(show.expires_in) }) %>
+      <% const ek = expiryKind(show); %>
+      <span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span>
+    </dd>
   </dl>
 </div>
 
   <% if (decoded) { %>
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'file-text'}) %> Value</h2>
+    <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('name.value') %></h2>
     <% if (decoded.kind==='json' && decoded.table) { %>
       <div class="dl" style="margin-bottom:12px">
-        <% decoded.table.forEach(t => { %>
-          <dt class="mono"><%= t.label %></dt>
-          <dd class="mono"><%= t.isObject ? '' : t.value %><% if (t.isObject) { %><span class="value" style="max-height:120px"><%= t.value %></span><% } %></dd>
+        <% decoded.table.forEach(row => { %>
+          <dt class="mono"><%= row.label %></dt>
+          <dd class="mono"><%= row.isObject ? '' : row.value %><% if (row.isObject) { %><span class="value" style="max-height:120px"><%= row.value %></span><% } %></dd>
         <% }) %>
       </div>
     <% } %>
@@ -38,17 +41,17 @@
   <% } %>
 
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'activity'}) %> Operation History (<%= (history||[]).length %>)</h2>
+    <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('name.operationHistory', { n: (history||[]).length }) %></h2>
     <div class="timeline">
       <% (history||[]).forEach(h => { %>
-      <% const ot = (h.opType||'').replace('OP_NAME_','').toUpperCase().replace('FIRSTUPDATE','REGISTER'); %>
+      <% const ot = h.opLabel || h.opType || 'UPDATE'; %>
       <div class="tl-item">
         <div class="tl-rail">
-          <span class="tl-dot <%= ot==='REGISTER'||ot==='NEW'?'dot-register':ot.indexOf('UPDATE')>=0?'dot-update':ot.indexOf('RENEW')>=0?'dot-renew':ot==='TRANSFER'?'dot-transfer':'dot-other' %>"></span>
+          <span class="tl-dot <%= ot==='REGISTER'||ot==='NEW'?'dot-register':ot==='TRANSFER'?'dot-transfer':ot==='RENEW'?'dot-renew':ot.indexOf('UPDATE')>=0?'dot-update':'dot-other' %>"></span>
         </div>
         <div class="tl-content">
           <div class="tl-head">
-            <span class="pill <%= ot==='NEW'?'purple':ot==='REGISTER'?'blue':ot.indexOf('UPDATE')>=0?'yellow':ot.indexOf('RENEW')>=0?'cyan':ot==='TRANSFER'?'pink':'gray' %>"><%= ot || 'UPDATE' %></span>
+            <span class="pill <%= ot==='NEW'?'purple':ot==='REGISTER'?'blue':ot==='TRANSFER'?'pink':ot==='RENEW'?'cyan':ot.indexOf('UPDATE')>=0?'yellow':'gray' %>" title="<%= h.opTitle || '' %>"><%= ot %></span>
             <span class="tl-date"><%= h.dateStr ? new Date(h.dateStr).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—' %>
               <% if (h.dateStr) { %><span class="dim">· <%= new Date(h.dateStr).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}) %> UTC</span><% } %></span>
             <span class="tl-height">blk <%= nfmt(h.height) %></span>
@@ -56,27 +59,27 @@
           <div class="tl-body">
             <% if (h.address) { %>→ <a href="/tx/<%= h.txid||'#' %>" class="mono"><%= h.address.slice(0,14) %>…</a><% } %>
             <% if (h.txid) { %><span class="dim">· <a href="/tx/<%= h.txid %>" class="mono"><%= h.txid.slice(0,10) %>…</a></span><% } %>
-            <% if (h.ismine) { %><span class="pill blue" style="font-size:10px">yours</span><% } %>
+            <% if (h.inferred) { %><span class="pill gray" style="font-size:10px"><%= t('name.inferred') %></span><% } %>
           </div>
           <% if (h.value) { %>
-          <div class="tl-value mono"><span class="dim">value</span> <%= String(h.value) %></div>
+          <div class="tl-value mono"><span class="dim"><%= t('name.value') %></span> <%= String(h.value) %></div>
           <% } %>
         </div>
       </div>
       <% }) %>
-      <% if (!history || history.length===0) { %><p class="muted">No operation history available.</p><% } %>
+      <% if (!history || history.length===0) { %><p class="muted"><%= t('name.noHistory') %></p><% } %>
     </div>
   </div>
 
 <% } else { %>
-  <div class="error">No active record for this name.</div>
+  <div class="error"><%= t('name.noRecord') %></div>
 <% } %>
 
 <% if (pending && pending.length) { %>
 <div class="panel">
-  <h2><%- include('includes/_icon', {icon:'activity'}) %> Pending (mempool) Operations</h2>
+  <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('name.pendingOps') %></h2>
   <table>
-    <thead><tr><th>Name</th><th>Op</th><th>Value</th></tr></thead>
+    <thead><tr><th><%= t('name.name') %></th><th><%= t('name.op') %></th><th><%= t('name.value') %></th></tr></thead>
     <tbody>
       <% pending.forEach(p => { %>
       <tr><td class="mono"><%= p.name %></td><td><%= p.op %></td><td class="mono"><%= String(p.value||'').slice(0,60) %></td></tr>

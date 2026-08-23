@@ -1,134 +1,118 @@
 # Architecture
 
-This document explains how Namecoin Explorer is built and why. It is a **manual
-deep-dive** for contributors and operators who want to understand the system
-beyond what the README covers.
+How Namecoin Explorer is put together, and why. For operators and contributors; the README stays shorter.
 
 ## Overview
 
-Namecoin Explorer is a web application that turns a Namecoin Core full node into
-a browsable, searchable name registry and operations explorer. It is:
+The app turns a Namecoin Core full node into a browsable registry and operations explorer.
 
-- **Registry-first**: the raison d'être of Namecoin is its name namespace, so the
-  UI is centred on names, not blocks.
-- **Two sources of truth**: the node (authoritative, on-chain) and a local SQLite
-  mirror (fast browsing at scale).
-- **Dependency-light**: Express + EJS + `better-sqlite3`. No build step, no heavy
-  framework, cheap to run on the same box as a full node.
+- **Registry-first.** Names are the product. Blocks and txs are support views.
+- **Two sources.** The node is authoritative on-chain. SQLite is the browse index.
+- **Dependency-light.** Express + EJS + SQLite. No bundler. Cheap to run next to `namecoind`.
 
-## Component map
+UI: server-rendered EJS, `public/css/explorer.css` (zinc neutrals, Namecoin blue accent only, light/dark). No CSS framework.
+
+## Boot and request path
 
 ```
 app.js
-└─ boot             read env, build rpc/cache/registry, start Express
-└─ middleware       chain-info, registry count, sync status (res.locals)
+├─ env, open SQLite, start ingest, listen on NMC_BIND:NMC_EXPLORER_PORT
+├─ middleware     ?lang= / Accept-Language, tip + name count from SQLite
 └─ routes
-   ├─ /             home (latest block, recent/expiring names, namespace rows)
-   ├─ /names        registry browse + search
-   ├─ /name/:name   name detail (record, value, full provenance timeline)
-   └─ lib/routes.js operations feed, /namespace, /blocks, /block, /tx, /stats, JSON API
+   ├─ /                  explorer home (header, namespaces, recent / expiring)
+   ├─ /names             registry + FTS5 search
+   ├─ /name/:name        name_show + name_pending; timeline from name_ops
+   └─ lib/routes.js      operations, namespace, blocks, txs, stats, JSON API
 ```
 
-### `lib/rpc.js` — hardened JSON-RPC client
+Catalogs in `lib/i18n.js` load at `require` time. Restart the process after editing `locales/*.json`.
 
-Wraps namecoind over HTTP JSON-RPC.
+## Modules
 
-- **Cookie auth by default** — reads `NMC_COOKIE_PATH` (e.g. `/var/lib/namecoin/.cookie`)
-  so no password lives in the app's env; falls back to explicit user/pass.
-- **Sequential queue** — calls are serialised via a promise chain to respect node
-  request limits and avoid hammering the daemon.
-- **Explicit hex ⇄ name** — `nameToHex` / `hexToName`. Critical for non-ASCII
-  names (Namecoin names are arbitrary bytes). A past bug came from trusting a name
-  string without hex-encoding it.
-- **Fail loud** — any RPC error becomes a thrown `RpcError` with a code; callers
-  decide. The client never fabricates a "not found / available" result.
+### `lib/rpc.js`
 
-### `lib/cache.js` — SQLite registry cache
+HTTP JSON-RPC to namecoind.
 
-`name_scan` can return ~780k names, which is too slow to page on demand. On start
-(and every `NMC_REFRESH_MS`), the app snapshots the registry into a SQLite table
-(`data/cache.db`) and indexes it. Browsing, search, namespace counts, and
-"recent/expiring" queries all hit this local mirror. The node remains
-authoritative for live name state (`name_show`).
+- Cookie auth (`NMC_COOKIE_PATH`); user/pass fallback. Re-reads the cookie on HTTP 401.
+- Small in-flight limiter so ingest and HTTP can overlap.
+- Name RPCs always send `{ nameEncoding: "hex", valueEncoding: "hex" }` (Core #246). `name_show` sets `allowExpired: true`. Decode at the RPC boundary. `ismine` is stripped and never stored.
+- Errors are `RpcError`. The client never fabricates “not found / available”.
 
-### `lib/registry.js` — background sync
+### `lib/cache.js`
 
-Pages `name_scan` and upserts into the cache. Runs on boot (`syncNow`) and on a
-timer (`start()`). Because paging 780k names takes real time, sync runs in the
-background so the HTTP server stays responsive.
+SQLite WAL. One writer (ingest), HTTP only reads.
 
-### `lib/names.js` — value classification + timeline
+Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `meta`. Never load the full registry into a JS array.
 
-- `classifyValue` — understands that a name value is arbitrary bytes that are
-  usually JSON; handles quote-wrapped JSON, DNS `map` shapes, and plain text.
-- `renderValue` — turns a raw value into a UI-ready record (DNS table / key-value
-  table / text).
-- `operationTimeline` — builds the ascending, dated, **type-labelled** operation
-  history. Because `name_history` does not return the op type or a date, the app
-  passes in maps (txid → op type, height → date) produced by the route.
+If `better-sqlite3` has no native build (e.g. some Windows/Node combos), fall back to `node:sqlite`.
 
-### `lib/txops.js` — OP_NAME extraction
+Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Autocomplete prefers prefix `MATCH` (`term*`), then `LIKE`. Cap 30. No Redis/Elasticsearch.
 
-Decodes a transaction's `scriptPubKey.asm` to detect `OP_NAME_NEW`,
-`OP_NAME_FIRSTUPDATE`, `OP_NAME_UPDATE`, `OP_NAME_RENEW`, etc., returning
-`{ op, name, nameHex, value, vout }`. This powers both the operations feed and
-the per-op type labelling in the name timeline.
+`opsAtHeight(height)` returns revealed ops in a block (`NAME_NEW` hidden unless asked).
 
-### `lib/routes.js` — additional routes
+### `lib/ingest.js`
 
-Operations feed (recent mined name ops), `/namespace`, `/blocks`, `/block`,
-`/tx`, `/stats`, `/operations/pending` (mempool name ops), and the JSON API.
+Replaces the old 50k-row `name_scan` dump. `lib/registry.js` is a stub that throws.
 
-## The provenance timeline (why it's special)
+1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names.
+2. **First run** — rewind ~36,000 blocks (one expiry window). `NMC_INGEST_FROM=0` or `genesis` starts at height 0 (`txindex=1`; slow; one writer).
+3. **Bootstrap** — paged `name_scan` at 500 names/page with a short pause so `cs_main` is not held. Then drop names whose `last_sync` predates that pass.
+4. **Lazy history** — `/name/:name` with no `name_ops` rows calls `name_history` once and stores the txs. Needs `txindex=1` and `namehistory=1`.
 
-Namecoin's `name_history` gives you, per name, a list of `{height, txid, value, …}`
-**without** the operation type or a block timestamp. To show a complete, dated,
-typed append-only history the route does three things per op:
+Polls `getblockchaininfo` every ~10s. Optional `NMC_ZMQ_HASHBLOCK` ticks on `hashblock`. Catch-up of thousands of blocks still uses the height loop. Missing `zeromq` or a bad URL fails startup. HTTP pages do not scan blocks.
 
-1. `getrawtransaction` → decode `OP_NAME_*` → the true op type (`REGISTER`, etc.).
-2. `getblockhash(height)` + `getblockheader(hash)` → the block time → a real date.
-3. Both are memoised per request, and the block-time lookup uses **header-only**
-   fetches (not full blocks) so a 27-op history renders in ~1–2s, not 13s.
+### `lib/names.js` / `lib/txops.js` / `lib/expiry.js`
 
-This is why the explorer shows the genesis of `d/bitcoin` at block 142
-(21 April 2011) — the first name ever — through to today, including expired names.
-The blockchain is append-only; the UI reflects that without pretending anything
-was erased.
+- Values: JSON, DNS `map`, quote-wrapped, plain text (`classifyValue` / `renderValue`).
+- Timeline: consensus ops are only `NAME_NEW`, `NAME_FIRSTUPDATE`, `NAME_UPDATE`. The UI may label **TRANSFER** / **RENEW** when the address changes or the value stays the same.
+- Extraction prefers `scriptPubKey.nameOp`, then ASM. Ignores non-consensus opcodes such as `NAME_RENEW`.
+- Expiry: 36,000 blocks after the last update. Semi-expire (stops resolving): `expires_in <= 4032`. Prefixes (`d/`, `id/`) are application namespaces, not consensus.
 
-## Design & frontend
+### `lib/api-json.js`
 
-- **EJS** server-rendered templates with a shared `layout.ejs`.
-- **Bulma** (vendored, `public/vendor/bulma.min.css`) as a reset/base, layered with
-  a hand-tuned design system (`public/css/brutalist.css`): light/dark theme,
-  Namecoin-blue palette, mobile-responsive app-bar + partial-width drawer.
-- Inline SVG icon set (`views/includes/_icon.ejs`) — feather-style, `currentColor`,
-  consistent across sidebar, page titles, stat cards, and panel headers.
-- Values and long hashes wrap (`overflow-wrap:anywhere`) so nothing crops on mobile.
+`sendApiJson` returns `application/json` for `curl` / `fetch`. Browser `Accept: text/html` renders `views/api-json.ejs` so Chromium is not white-on-white. `?format=json` or `?raw=1` forces raw JSON.
 
-## Data flow example
+### `lib/i18n.js`
+
+`t(key, vars)` on `res.locals`. `?lang=` then `Accept-Language`, default `en`. Catalogs: `locales/en.json`, `locales/de.json`. Name values and txids are not translated.
+
+### `lib/routes.js`
+
+`/operations` reads `name_ops` (filter + hide `NAME_NEW` unless `?commitments=1`). `/operations/pending` is `name_pending` only. `/block` and `/tx` still use RPC for the requested object; name ops on those pages come from `nameOpsFromTx`.
+
+## Provenance
+
+`name_history` has no `op` and no timestamp. After ingest (or one lazy backfill), the name page reads `name_ops`. It does not loop `getrawtransaction` on every load.
+
+## Frontend
+
+- Shared `views/layout.ejs`: sidebar (Explorer, Name Browser, …), search, theme, footer.
+- Icons: `views/includes/_icon.ejs` (stroke SVG, `currentColor`).
+- CSS: `public/css/explorer.css`. Bump `?v=` on the stylesheet link when the file changes.
+- Tables use `table-layout: fixed` and ellipsis so long names do not shove columns off-screen.
+- Layout JS wraps tables in `.table-wrap`. Search script must use `<%- JSON.stringify(...) %>` — `<%= %>` HTML-escapes quotes and breaks the page.
+
+## Data flow
 
 ```
 GET /name/d%2Fbitcoin
-  → name_show("d/bitcoin")            current record (live state)
-  → name_history("d/bitcoin")         full op list from the name index
-  → per op: getrawtransaction / getblockheader   → op type + date
-  → operationTimeline(...)            → typed, dated ascending timeline
-  → res.render("name", ...)           → HTML page
+  → name_show("d/bitcoin")     current record (hex, allowExpired)
+  → SQLite name_ops            typed timeline (lazy name_history if empty)
+  → name_pending(name)         mempool ops for this name
+  → res.render("name", ...)
 ```
 
-## Testing & operations
+```
+GET /
+  → cache header + opsAtHeight + namespaces + recent + expiringSoon
+  → no per-request RPC for the dashboard body
+```
 
-- No test runner configured yet (see `CONTRIBUTING.md`); CI runs syntax checks,
-  EJS compile checks, and `npm audit`.
-- The node must run with `txindex=1` and `namehistory=1` for `getrawtransaction`
-  and full `name_history` to work. If `namehistory` was not built at initial sync,
-  a one-time `-reindex` populates it.
-- Bind the app to `127.0.0.1`; put Caddy/nginx in front for HTTPS. Never expose
-  the RPC port (8336) publicly.
+## Operations
 
-## Notes on operations at scale
+- Tests: `npm test` (`node --test test/`). No live node.
+- Bind `127.0.0.1`. Reverse-proxy for HTTPS. Never expose 8336.
+- **Topology:** one ingest+HTTP process beside `namecoind`. Optional extra HTTP processes may open the same `cache.db` with `mode=ro` on a **shared filesystem** and must never run ingest. Do not split ingest across machines. Do not introduce Postgres unless you run several explorer hosts without shared disk.
+- Playwright is a dev dependency, not required at runtime.
 
-- The in-memory `heightCache` bounds RPC lookups to unique heights per request.
-- The registry snapshot makes list/search queries O(1) against a local table.
-- Playwright is a dev dependency (used for headless UI verification), not a
-  runtime dependency.
+Parked: Go rewrite, SPA, wallet `ismine`, Redis/Postgres as the primary store.

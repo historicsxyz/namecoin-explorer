@@ -1,8 +1,8 @@
-<div class="topbar"><h1><%- include('includes/_icon', {icon:'box'}) %> Blocks</h1><span class="crumb">most recent first</span></div>
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'blocks'}) %> <%= t('blocks.title') %></h1></div>
 
 <div class="panel">
   <table>
-    <thead><tr><th>Height</th><th>Hash</th><th>Time</th><th>Txs</th><th>Name Ops</th></tr></thead>
+    <thead><tr><th><%= t('blocks.height') %></th><th><%= t('blocks.hash') %></th><th><%= t('blocks.time') %></th><th><%= t('blocks.txs') %></th><th><%= t('blocks.nameOps') %></th></tr></thead>
     <tbody>
       <% (blocks||[]).forEach(b => { %>
       <tr>

@@ -1,18 +1,18 @@
-<div class="topbar"><h1><%- include('includes/_icon', {icon:'chart'}) %> Statistics</h1><span class="crumb">Namecoin network overview</span></div>
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'chart'}) %> <%= t('stats.title') %></h1></div>
 
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
 
 <div class="grid cols-4" style="margin-bottom:18px">
-  <div class="stat"><div class="n"><%= stats.totalNames!=null?nfmt(stats.totalNames):'—' %></div><div class="l">Total names</div></div>
-  <div class="stat"><div class="n" style="color:var(--green)"><%= stats.liveNames!=null?nfmt(stats.liveNames):'—' %></div><div class="l">Live</div></div>
-  <div class="stat"><div class="n" style="color:var(--red)"><%= stats.expiredNames!=null?nfmt(stats.expiredNames):'—' %></div><div class="l">Expired</div></div>
-  <div class="stat"><div class="n"><%= stats.chain && stats.chain.blocks ? nfmt(stats.chain.blocks) : '—' %></div><div class="l">Block height</div></div>
+  <div class="stat"><div class="n"><%= stats.totalNames!=null?nfmt(stats.totalNames):'—' %></div><div class="l"><%= t('stats.totalNames') %></div></div>
+  <div class="stat"><div class="n" style="color:var(--green)"><%= stats.liveNames!=null?nfmt(stats.liveNames):'—' %></div><div class="l"><%= t('stats.live') %></div></div>
+  <div class="stat"><div class="n" style="color:var(--red)"><%= stats.expiredNames!=null?nfmt(stats.expiredNames):'—' %></div><div class="l"><%= t('stats.expired') %></div></div>
+  <div class="stat"><div class="n"><%= stats.chain && stats.chain.blocks ? nfmt(stats.chain.blocks) : '—' %></div><div class="l"><%= t('stats.blockHeight') %></div></div>
 </div>
 
 <div class="panel">
-  <h2><%- include('includes/_icon', {icon:'layers'}) %> Namespaces</h2>
+  <h2><%- include('includes/_icon', {icon:'layers'}) %> <%= t('stats.namespaces') %></h2>
   <table>
-    <thead><tr><th>Prefix</th><th>Total</th><th>Live</th><th>Expired</th><th>Live %</th></tr></thead>
+    <thead><tr><th><%= t('stats.prefix') %></th><th><%= t('stats.total') %></th><th><%= t('stats.live') %></th><th><%= t('stats.expired') %></th><th><%= t('stats.livePct') %></th></tr></thead>
     <tbody>
       <% (stats.namespaces||[]).slice(0,25).forEach(r => { %>
       <tr>

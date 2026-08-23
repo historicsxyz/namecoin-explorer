@@ -1,47 +1,47 @@
-<div class="topbar"><h1><%- include('includes/_icon', {icon:'search'}) %> Name Browser</h1><span class="crumb">the full Namecoin registry</span></div>
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'search'}) %> <%= t('names.title') %></h1></div>
 
 <div class="filterbar">
-  <form action="/names" method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <input type="text" name="q" value="<%= q||'' %>" placeholder="Search names…" style="width:220px">
+  <form action="/names" method="get">
+    <input type="text" name="q" value="<%= q||'' %>" placeholder="<%= t('names.searchPlaceholder') %>" style="width:220px">
     <select name="ns" onchange="this.form.submit()">
-      <option value="">All namespaces</option>
+      <option value=""><%= t('names.allNamespaces') %></option>
       <% (namespaces||[]).forEach(n => { %>
         <option value="<%= n.namespace.replace(/\/$/,'') %>" <%= ns===n.namespace.replace(/\/$/,'')?'selected':'' %>><%= n.namespace %> (<%= nfmt(n.total) %>)</option>
       <% }) %>
     </select>
     <select name="status" onchange="this.form.submit()">
-      <option value="">All status</option>
-      <option value="live" <%= status==='live'?'selected':'' %>>Live</option>
-      <option value="expiring" <%= status==='expiring'?'selected':'' %>>Expiring soon</option>
-      <option value="expired" <%= status==='expired'?'selected':'' %>>Expired</option>
+      <option value=""><%= t('names.allStatus') %></option>
+      <option value="live" <%= status==='live'?'selected':'' %>><%= t('names.live') %></option>
+      <option value="expiring" <%= status==='expiring'?'selected':'' %>><%= t('names.expiringSoon') %></option>
+      <option value="expired" <%= status==='expired'?'selected':'' %>><%= t('names.expired') %></option>
     </select>
-    <button class="btn" type="submit">Filter</button>
+    <button class="btn" type="submit"><%= t('names.filter') %></button>
   </form>
 </div>
 
 <div class="panel">
-  <table>
-    <thead><tr><th>Name</th><th>Value</th><th>Owner</th><th>Updated</th><th>Expires &nbsp;in</th><th>Status</th></tr></thead>
+  <table class="names-table">
+    <thead><tr><th><%= t('names.name') %></th><th><%= t('names.value') %></th><th><%= t('names.owner') %></th><th><%= t('names.updated') %></th><th><%= t('names.expiresIn') %></th><th><%= t('names.status') %></th></tr></thead>
     <tbody>
       <% (rows||[]).forEach(r => { %>
       <tr>
-        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>"><%= r.name %></a></td>
+        <td class="mono"><a href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name %></a></td>
         <td class="mono" style="max-width:260px;overflow:hidden;text-overflow:ellipsis"><%= (r.value||'').slice(0,50) %></td>
         <td class="mono" style="font-size:11px;color:var(--dim)"><%= r.address ? r.address.slice(0,14)+'…' : '—' %></td>
         <td><%= nfmt(r.height) %></td>
         <td class="mono"><%= r.expires_in!=null?nfmt(r.expires_in):'—' %></td>
-        <td><% if (r.expired) { %><span class="pill red">expired</span><% } else if (r.expires_in!=null && r.expires_in<1000) { %><span class="pill yellow">expiring</span><% } else { %><span class="pill green">live</span><% } %></td>
+        <td><% const ek = expiryKind(r); %><span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span></td>
       </tr>
       <% }) %>
       <% if (!rows || rows.length===0) { %>
-        <tr><td colspan="6" class="empty">No names match. The registry cache may still be building — give it a moment.</td></tr>
+        <tr><td colspan="6" class="empty"><%= t('names.noMatch') %></td></tr>
       <% } %>
     </tbody>
   </table>
   <div class="pager">
     <% if (rows && rows.length>=limit) { %>
-      <a class="btn" href="/names?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= ns?'&ns='+ns:'' %><%= status?'&status='+status:'' %> <%= q?'&q='+q:'' %>">Next →</a>
+      <a class="btn" href="/names?start=<%= encodeURIComponent(rows[rows.length-1].name) %>&limit=<%= limit %><%= ns?'&ns='+ns:'' %><%= status?'&status='+status:'' %> <%= q?'&q='+q:'' %>"><%= t('names.next') %></a>
     <% } %>
-    <span class="muted"><%= rows?.length||0 %> shown</span>
+    <span class="muted"><%= t('names.shown', { n: rows?.length||0 }) %></span>
   </div>
 </div>

@@ -1,37 +1,40 @@
 <div class="topbar">
-  <h1><%- include('includes/_icon', {icon:'activity'}) %> Name Operations</h1>
-  <span class="crumb">confirmed name transactions on-chain</span>
+  <h1><%- include('includes/_icon', {icon:'activity'}) %> <%= t('ops.title') %></h1>
 </div>
 
-<%- include('includes/_infonote', { note: 'These are <strong>confirmed</strong> name operations that have been mined into blocks. Before mining, they briefly wait unconfirmed in the mempool (see <a href="/operations/pending">Pending Name Operations</a> for that view).' }) %>
+<%- include('includes/_infonote', { note: t('ops.confirmedNote') }) %>
 
 <div class="filterbar">
-  <form action="/operations" method="get" style="display:flex;gap:8px;align-items:center">
+  <form action="/operations" method="get">
     <select name="op" onchange="this.form.submit()">
-      <option value="">All operations</option>
-      <option value="OP_NAME_NEW" <%= op==='OP_NAME_NEW'?'selected':'' %>>NAME_NEW</option>
-      <option value="OP_NAME_FIRSTUPDATE" <%= op==='OP_NAME_FIRSTUPDATE'?'selected':'' %>>FIRSTUPDATE / register</option>
-      <option value="OP_NAME_UPDATE" <%= op==='OP_NAME_UPDATE'?'selected':'' %>>UPDATE</option>
-      <option value="OP_NAME_RENEW" <%= op==='OP_NAME_RENEW'?'selected':'' %>>RENEW</option>
+      <option value=""><%= t('ops.all') %></option>
+      <option value="NAME_NEW" <%= op==='NAME_NEW'?'selected':'' %>>NAME_NEW</option>
+      <option value="NAME_FIRSTUPDATE" <%= op==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('ops.firstupdate') %></option>
+      <option value="NAME_UPDATE" <%= op==='NAME_UPDATE'?'selected':'' %>><%= t('ops.update') %></option>
     </select>
-    <a class="btn" href="/operations/pending">Pending (mempool)</a>
+    <label class="filterbar-check">
+      <input type="checkbox" name="commitments" value="1" <%= (typeof commitments !== 'undefined' && commitments) ? 'checked' : '' %> onchange="this.form.submit()">
+      <%= t('ops.showCommitments') %>
+    </label>
+    <a class="btn btn-ghost" href="/operations/pending"><%= t('ops.pending') %></a>
   </form>
-  <div class="mono" style="font-size:11px;color:var(--muted);align-self:center">
-    chain tip #<%= (scanInfo&&scanInfo.tip)||'…' %> · last op at #<%= (scanInfo&&scanInfo.range)||'…' %> ·
-    updated <span data-live-updated><%= now ? new Date(now).toLocaleTimeString() : '' %></span>
+  <div class="filterbar-meta">
+    <span><%= t('ops.chainTip', { n: (scanInfo&&scanInfo.tip)||'…' }) %></span>
+    <span><%= t('ops.lastOp', { n: (scanInfo&&scanInfo.range)||'…' }) %></span>
+    <span><%= t('ops.updated') %> <span data-live-updated><%= now ? new Date(now).toLocaleTimeString() : '' %></span></span>
   </div>
 </div>
 
 <div class="panel">
   <table>
-    <thead><tr><th>Block</th><th>Operation</th><th>Name</th><th>Value</th><th>Time</th><th>Tx</th></tr></thead>
+    <thead><tr><th><%= t('ops.block') %></th><th><%= t('ops.operation') %></th><th><%= t('ops.name') %></th><th><%= t('ops.value') %></th><th><%= t('ops.time') %></th><th><%= t('ops.tx') %></th></tr></thead>
     <tbody>
       <% (feed||[]).forEach(o => { %>
       <tr>
         <td class="mono"><a href="/block/<%= o.block %>"><%= nfmt(o.block) %></a></td>
         <td>
-          <% const l=(o.op||'').replace('OP_NAME_',''); %>
-          <span class="pill <%= l==='NEW'?'purple':l==='FIRSTUPDATE'?'blue':l==='UPDATE'?'yellow':l==='RENEW'?'cyan':'gray' %>"><%= l %></span>
+          <% const l = o.displayOp || o.op || ''; %>
+          <span class="pill <%= l==='NAME_NEW'?'purple':l==='NAME_FIRSTUPDATE'?'blue':l==='TRANSFER'?'pink':l==='NAME_UPDATE'?'yellow':'gray' %>"><%= l.replace(/^NAME_/,'') %></span>
         </td>
         <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
         <td class="mono" style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><%= String(o.value||'').slice(0,40) %></td>
@@ -40,19 +43,8 @@
       </tr>
       <% }) %>
       <% if (!feed || feed.length===0) { %>
-        <tr><td colspan="6" class="empty">No name operations found in the last 100 blocks. This is normal when the chain goes quiet — new ones appear as blocks with name ops land.</td></tr>
+        <tr><td colspan="6" class="empty"><%= t('ops.empty') %></td></tr>
       <% } %>
     </tbody>
   </table>
 </div>
-
-<script>
-  // auto-refresh the operations feed so it feels live
-  (function () {
-    var timer = null;
-    var el = document.querySelector('[data-live-updated]');
-    function fresh() { location.reload(); }
-    document.addEventListener('keydown', function (e) { if (e.key === 'r' && (e.metaKey || e.ctrlKey)) return; });
-    // manual refresh already via browser; keep lightweight: no auto-poll to avoid hammering the node
-  })();
-</script>

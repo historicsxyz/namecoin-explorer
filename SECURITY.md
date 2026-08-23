@@ -1,6 +1,6 @@
 # Security Policy
 
-Thank you for helping keep Namecoin Explorer and everyone running it safe.
+Thank you for helping keep Namecoin Explorer and the people who self-host it safe.
 
 ## Supported versions
 
@@ -49,4 +49,4 @@ The following are out of scope / by design:
 3. We triage, fix, and release a patched version.
 4. After a reasonable embargo so users can update, the advisory is published.
 
-Thanks to the researchers who help keep the ecosystem safe. 🛡️
+Thanks to the researchers who help keep the ecosystem safe.

@@ -1,24 +1,24 @@
-<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : 'Transaction' %></h1><span class="crumb">namecoin transaction</span></div>
+<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : t('tx.title') %></h1><span class="crumb"><%= t('tx.crumb') %></span></div>
 
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
 
 <% if (tx) { %>
 <div class="panel">
-  <h2><%- include('includes/_icon', {icon:'file-text'}) %> Summary</h2>
+  <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('tx.summary') %></h2>
   <dl class="dl">
-    <dt>Txid</dt><dd><%= tx.txid %></dd>
-    <% if (tx.blockhash) { %><dt>Block</dt><dd><a href="/block/<%= tx.blockhash %>"><%= tx.blockhash.slice(0,24) %>…</a></dd><% } %>
-    <dt>Confirmations</dt><dd><%= tx.confirmations %></dd>
-    <dt>Inputs / Outputs</dt><dd><%= (tx.vin||[]).length %> in / <%= (tx.vout||[]).length %> out</dd>
-    <% if (tx.blocktime) { %><dt>Time</dt><dd><%= new Date(tx.blocktime*1000).toUTCString() %></dd><% } %>
+    <dt><%= t('tx.txid') %></dt><dd><%= tx.txid %></dd>
+    <% if (tx.blockhash) { %><dt><%= t('tx.block') %></dt><dd><a href="/block/<%= tx.blockhash %>"><%= tx.blockhash.slice(0,24) %>…</a></dd><% } %>
+    <dt><%= t('tx.confirmations') %></dt><dd><%= tx.confirmations %></dd>
+    <dt><%= t('tx.inOut') %></dt><dd><%= t('tx.inOutVal', { vin: (tx.vin||[]).length, vout: (tx.vout||[]).length }) %></dd>
+    <% if (tx.blocktime) { %><dt><%= t('tx.time') %></dt><dd><%= new Date(tx.blocktime*1000).toUTCString() %></dd><% } %>
   </dl>
 </div>
 
   <% if (nameOps && nameOps.length) { %>
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'tag'}) %> Name Operations</h2>
+    <h2><%- include('includes/_icon', {icon:'tag'}) %> <%= t('tx.nameOps') %></h2>
     <table>
-      <thead><tr><th>vout</th><th>Operation</th><th>Name</th><th>Value</th></tr></thead>
+      <thead><tr><th><%= t('tx.vout') %></th><th><%= t('tx.operation') %></th><th><%= t('tx.name') %></th><th><%= t('tx.value') %></th></tr></thead>
       <tbody>
         <% nameOps.forEach(o => { %>
         <tr>
@@ -34,9 +34,9 @@
   <% } %>
 
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'box'}) %> Outputs</h2>
+    <h2><%- include('includes/_icon', {icon:'box'}) %> <%= t('tx.outputs') %></h2>
     <table>
-      <thead><tr><th>Index</th><th>Value</th><th>Address</th><th>Type</th></tr></thead>
+      <thead><tr><th><%= t('tx.index') %></th><th><%= t('tx.value') %></th><th><%= t('tx.address') %></th><th><%= t('tx.type') %></th></tr></thead>
       <tbody>
         <% (tx.vout||[]).forEach((o,i) => { %>
         <tr>
