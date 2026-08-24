@@ -224,7 +224,7 @@ html[data-theme="dark"] [data-theme-toggle] .ico-moon { display: block; }
 .stat .n { font-size: 28px; font-weight: 700; letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.1; }
 .stat .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 6px; }
 
-.panel { padding: 18px 18px 8px; margin-bottom: 18px; min-width: 0; overflow: hidden; }
+.panel { padding: 18px 18px 8px; margin-bottom: 18px; min-width: 0; overflow: visible; }
 .grid > * { min-width: 0; }
 .grid > .panel {
   margin-bottom: 0;
@@ -412,22 +412,34 @@ a.btn.btn-ghost:hover {
 }
 .pager, .pager { display: flex; gap: 12px; align-items: center; padding: 12px 0 8px; font-size: 13px; }
 
-.value-wrap { min-width: 0; max-width: 100%; overflow: hidden; }
-pre.value { font: inherit; }
+.value-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+pre.value {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
 .value, .api-json {
   display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0;
+  box-sizing: border-box;
   background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 12px 14px;
   font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  word-break: break-all;
+  word-break: break-word;
   color: var(--ink);
-  max-height: 280px;
+  max-height: min(60vh, 28rem);
   overflow: auto;
 }
 .value-plain {
@@ -477,21 +489,12 @@ pre.value { font: inherit; }
   border-top: 1px solid var(--line);
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 .tl-value-block > .l {
   display: block; margin-bottom: 8px;
   color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
   font-size: 10.5px; font-weight: 650;
-}
-.tl-value-summ {
-  display: block; max-width: 100%; width: 100%;
-  box-sizing: border-box;
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 8px 12px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--ink-2);
-  word-break: normal; min-width: 0;
 }
 .tl-content .value-list { padding-bottom: 0; }
 .tl-content .value { max-height: 160px; font-size: 12px; }

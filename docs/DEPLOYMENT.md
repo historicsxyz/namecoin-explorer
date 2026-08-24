@@ -62,6 +62,7 @@ EnvironmentFile=/srv/namecoin-explorer/.env
 ExecStart=/usr/bin/node app.js
 Restart=on-failure
 RestartSec=5
+TimeoutStopSec=20
 User=namecoin
 
 [Install]
@@ -75,7 +76,12 @@ WantedBy=multi-user.target
 ```
 nmc.example.org {
     encode gzip
-    reverse_proxy 127.0.0.1:3100
+    reverse_proxy 127.0.0.1:3100 {
+        lb_try_duration 5s
+        transport http {
+            keepalive 32s
+        }
+    }
     header {
         X-Frame-Options SAMEORIGIN
         Referrer-Policy no-referrer

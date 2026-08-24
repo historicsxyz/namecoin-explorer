@@ -127,6 +127,7 @@
     "name": "Name",
     "owner": "Inhaber",
     "lastUpdateTx": "Letzte Update-Tx",
+    "firstRegisteredAt": "Erstmals registriert",
     "updatedAt": "Aktualisiert",
     "height": "Höhe {n}",
     "expires": "Läuft ab",

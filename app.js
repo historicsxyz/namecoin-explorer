@@ -296,7 +296,31 @@ app.get('/name/:name', async (req, res) => {
       expiresTs = shiftByBlocks(Date.now() / 1000, show.expires_in);
     }
 
-    record = { updateTs, updateApprox, expiresTs, expiresApprox, expiryHeight };
+    let firstTs = null;
+    let firstApprox = false;
+    const firstOp = (timeline || []).find((h) => h.opType === 'NAME_FIRSTUPDATE' || h.opLabel === 'REGISTER')
+      || (timeline || []).find((h) => h.opType && h.opType !== 'NAME_NEW')
+      || (timeline || [])[0]
+      || null;
+    const firstHeight = (firstOp && firstOp.height != null)
+      ? firstOp.height
+      : (cached && cached.first_seen != null ? cached.first_seen : null);
+    if (firstOp && firstOp.timeMs) firstTs = firstOp.timeMs / 1000;
+    if (firstTs == null && firstHeight != null) {
+      try {
+        const firstHdr = cache.headerAt(firstHeight);
+        if (firstHdr && firstHdr.time) firstTs = firstHdr.time;
+      } catch { /* empty index */ }
+    }
+    if (firstTs == null && firstHeight != null) {
+      try {
+        const hash = await rpc.call('getblockhash', [Number(firstHeight)]);
+        const header = await rpc.call('getblockheader', [hash, true]);
+        if (header && header.time) firstTs = header.time;
+      } catch { /* node down */ }
+    }
+
+    record = { updateTs, updateApprox, expiresTs, expiresApprox, expiryHeight, firstTs, firstApprox, firstHeight };
   }
 
   res.render('name', {
@@ -336,6 +360,8 @@ if (require.main === module) {
   const server = app.listen(PORT, bind, () => {
     console.log(`Namecoin Explorer v2 listening on http://${bind}:${PORT}`);
   });
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
   server.on('error', (e) => { console.error('Server error', e); process.exit(1); });
 
   try {
@@ -345,7 +371,12 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const shutdown = () => { ingest.stop(); server.close(); cache.close(); process.exit(0); };
+  const shutdown = () => {
+    ingest.stop();
+    const t = setTimeout(() => { cache.close(); process.exit(1); }, 8000);
+    t.unref();
+    server.close(() => { clearTimeout(t); cache.close(); process.exit(0); });
+  };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }

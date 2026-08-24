@@ -27,10 +27,12 @@ describe('NameCache', () => {
     assert.equal(live.expired, 0);
     assert.equal(live.expires_in, 36000);
 
-    cache.refreshExpiry(37001);
+    cache.setTip(37001, 'x');
     const dead = cache.get('d/example');
     assert.equal(dead.expired, 1);
     assert.ok(dead.expires_in <= 0);
+    assert.ok(cache.page({ status: 'expired' }).some((r) => r.name === 'd/example'));
+    assert.equal(cache.expiringSoon().some((r) => r.name === 'd/example'), false);
     cache.close();
   });
 

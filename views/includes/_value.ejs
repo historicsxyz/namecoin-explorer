@@ -6,13 +6,6 @@
     <li><% if (item.isObject) { %><pre class="value"><%= item.value %></pre><% } else { %><span class="mono value-plain"><%= item.value %></span><% } %></li>
     <% }) %>
   </ol>
-<% } else if (decoded && decoded.kind === 'json' && decoded.table && decoded.table.length) { %>
-  <div class="dl<%= isCompact ? ' compact' : '' %>">
-    <% decoded.table.forEach(row => { %>
-      <dt class="mono"><%= row.label %></dt>
-      <dd><% if (row.isObject) { %><pre class="value"><%= row.value %></pre><% } else { %><span class="mono value-plain"><%= row.value %></span><% } %></dd>
-    <% }) %>
-  </div>
 <% } else if (decoded && decoded.raw) { %>
   <pre class="value"><%= decoded.raw %></pre>
 <% } else if (typeof fallback !== 'undefined' && fallback) { %>

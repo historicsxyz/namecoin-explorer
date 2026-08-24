@@ -34,7 +34,12 @@
       <span class="v"><%= rec.expiresTs ? fmtUtc(rec.expiresTs, lang) : '—' %></span>
       <span class="s"><% const re = rec.expiresTs ? relDur(rec.expiresTs) : null; %><% if (re) { %><%= rec.expiresApprox ? t('time.approx') + ' ' : '' %><%= t(re.future ? 'time.in' : 'time.ago', { t: re.t }) %> · <% } %><%= t('name.blocks', { n: nfmt(show.expires_in) }) %></span>
     </div>
-    <div class="record-field record-span">
+    <div class="record-field">
+      <span class="l"><%= t('name.firstRegisteredAt') %></span>
+      <span class="v"><%= rec.firstTs ? fmtUtc(rec.firstTs, lang) : '—' %></span>
+      <span class="s"><% const rf = rec.firstTs ? relDur(rec.firstTs) : null; %><% if (rf) { %><%= rec.firstApprox ? t('time.approx') + ' ' : '' %><%= t(rf.future ? 'time.in' : 'time.ago', { t: rf.t }) %> · <% } %><% if (rec.firstHeight != null) { %><%= t('name.height', { n: nfmt(rec.firstHeight) }) %><% } else { %>—<% } %></span>
+    </div>
+    <div class="record-field">
       <span class="l"><%= t('name.lastUpdateTx') %></span>
       <span class="v mono"><% if (show.txid) { %><a href="/tx/<%= show.txid %>" title="<%= show.txid %>"><%= shortId(show.txid, 12, 10) %></a><% } else { %>—<% } %></span>
     </div>
@@ -74,14 +79,7 @@
           <% if (hv && hv.kind !== 'empty') { %>
           <div class="tl-value-block">
             <span class="l"><%= t('name.value') %></span>
-            <% if (hv.kind === 'json' && (hv.table || hv.items) && (hv.table || []).length > 1) { %>
-              <% // structured value: show a compact one-line summary (label: value) %>
-              <span class="tl-value-summ mono" title="<%= String(h.value).replace(/"/g,'&quot;') %>">
-                { <%= (hv.table||hv.items||[]).map(r => r.label).join(', ') %> }
-              </span>
-            <% } else if (hv && hv.raw) { %>
-              <span class="mono tl-value-summ" title="<%= String(h.value).replace(/"/g,'&quot;') %>"><%= String(hv.raw).slice(0,80) %></span>
-            <% } %>
+            <%- include('includes/_value', { decoded: hv, compact: true, fallback: h.value }) %>
           </div>
           <% } %>
           <% } %>

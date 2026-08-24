@@ -50,4 +50,12 @@ describe('classifyValue / renderValue', () => {
     assert.equal(again.kind, 'json');
     assert.equal(again.table[0].value, '1.2.3.4');
   });
+
+  it('keeps the closing brace in pretty JSON for a simple object', () => {
+    const decoded = renderValue({ value: '{ "info" : "The Church of Bitcoin." }' });
+    assert.equal(decoded.kind, 'json');
+    assert.match(decoded.raw, /Church of Bitcoin/);
+    assert.match(decoded.raw, /\}$/);
+    assert.equal(decoded.table[0].label, 'info');
+  });
 });

@@ -127,6 +127,7 @@
     "name": "Name",
     "owner": "Owner",
     "lastUpdateTx": "Last update tx",
+    "firstRegisteredAt": "First registered at",
     "updatedAt": "Updated",
     "height": "height {n}",
     "expires": "Expires",

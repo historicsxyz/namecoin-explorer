@@ -38,7 +38,7 @@
   <% if (seo.jsonLd) { %>
   <script type="application/ld+json"><%- seo.jsonLd %></script>
   <% } %>
-  <link rel="stylesheet" href="/css/explorer.css?v=38">
+  <link rel="stylesheet" href="/css/explorer.css?v=41">
   <script>
     try {
       var savedTheme = localStorage.getItem('nmc-theme');
@@ -122,7 +122,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.5' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.5' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.6' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.6' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>
