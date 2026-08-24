@@ -51,7 +51,8 @@
   <div class="panel">
     <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('name.operationHistory', { n: (history||[]).length }) %></h2>
     <div class="timeline">
-      <% (history||[]).forEach(h => { %>
+      <% const tlRev = (history||[]).slice().reverse(); %>
+      <% tlRev.forEach(h => { %>
       <% const ot = h.opLabel || h.opType || 'UPDATE'; %>
       <div class="tl-item">
         <div class="tl-rail">
@@ -73,7 +74,14 @@
           <% if (hv && hv.kind !== 'empty') { %>
           <div class="tl-value-block">
             <span class="l"><%= t('name.value') %></span>
-            <%- include('includes/_value', { decoded: hv, compact: true }) %>
+            <% if (hv.kind === 'json' && (hv.table || hv.items) && (hv.table || []).length > 1) { %>
+              <% // structured value: show a compact one-line summary (label: value) %>
+              <span class="tl-value-summ mono" title="<%= String(h.value).replace(/"/g,'&quot;') %>">
+                { <%= (hv.table||hv.items||[]).map(r => r.label).join(', ') %> }
+              </span>
+            <% } else if (hv && hv.raw) { %>
+              <span class="mono tl-value-summ" title="<%= String(h.value).replace(/"/g,'&quot;') %>"><%= String(hv.raw).slice(0,80) %></span>
+            <% } %>
           </div>
           <% } %>
           <% } %>

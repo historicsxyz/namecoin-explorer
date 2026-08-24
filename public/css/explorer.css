@@ -484,6 +484,15 @@ pre.value { font: inherit; }
   color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
   font-size: 10.5px; font-weight: 650;
 }
+.tl-value-summ {
+  display: block; max-width: 100%; width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 8px 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--ink-2);
+  word-break: normal; min-width: 0;
+}
 .tl-content .value-list { padding-bottom: 0; }
 .tl-content .value { max-height: 160px; font-size: 12px; }
 .dl.compact {
@@ -560,6 +569,38 @@ pre.value { font: inherit; }
   .filterbar { padding: 10px; }
   .filterbar-meta { margin-left: 0; width: 100%; }
   .site-footer { gap: 8px; padding-top: 16px; }
+
+  /* ---- mobile tables: scroll horizontally instead of cropping ----
+     table-layout:fixed + nowrap/ellipsis clips long content. On mobile,
+     let the table take its natural (min-content) width so the .table-wrap
+     scrolls horizontally and full cell content stays reachable. */
+  .table-wrap {
+    display: block;
+  }
+  .table-wrap table {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+  .table-wrap thead th,
+  .table-wrap tbody td,
+  .table-wrap td {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .table-wrap td a {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+  }
+  .table-wrap td, .table-wrap th {
+    padding: 10px 12px;
+  }
+  .table-wrap .names-table th, .table-wrap .names-table td {
+    width: auto;
+  }
 }
 
 @media (max-width: 480px) {
