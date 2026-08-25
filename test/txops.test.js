@@ -26,6 +26,7 @@ describe('txops', () => {
     const parsed = extractFromAsm('OP_NAME_NEW aabbccddeeff');
     assert.equal(parsed.op, 'NAME_NEW');
     assert.equal(parsed.name, null);
+    assert.equal(parsed.value, 'aabbccddeeff');
   });
 
   it('prefers scriptPubKey.nameOp over ASM', () => {

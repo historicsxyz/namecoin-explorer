@@ -60,3 +60,22 @@ describe('classifyValue / renderValue', () => {
     assert.equal(decoded.table[0].label, 'info');
   });
 });
+
+describe('showFromCache', () => {
+  it('maps an indexed name row to a name_show-shaped record', () => {
+    const { showFromCache } = require('../lib/names');
+    assert.equal(showFromCache(null), null);
+    const show = showFromCache({
+      name: 'd/our',
+      value: '{}',
+      address: 'N1',
+      height: 100,
+      expires_in: 2000,
+      expired: 0,
+    }, { txid: 'ab'.repeat(32) });
+    assert.equal(show.name, 'd/our');
+    assert.equal(show.txid, 'ab'.repeat(32));
+    assert.equal(show.expired, false);
+    assert.equal(showFromCache({ name: 'd/x', expired: 1 }).txid, null);
+  });
+});

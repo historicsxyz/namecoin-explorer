@@ -99,6 +99,15 @@ describe('NameCache', () => {
     assert.equal(ops.length, 1);
     assert.equal(ops[0].op, 'NAME_FIRSTUPDATE');
     assert.equal(cache.getTip().height, 200);
+    assert.equal(cache.txidSeen('tt'), true);
+    assert.equal(cache.txidSeen('nope'), false);
+    const byTx = cache.opsForTxids(['tt', 'nope']);
+    assert.equal(byTx.tt.length, 1);
+    assert.equal(byTx.tt[0].op, 'NAME_FIRSTUPDATE');
+    assert.equal(byTx.nope, undefined);
+    const byAddr = cache.opsByAddress('N1');
+    assert.equal(byAddr.length, 1);
+    assert.equal(byAddr[0].name, 'd/x');
     assert.equal(cache.isHistorySynced('d/x'), false);
     cache.markHistorySynced('d/x');
     assert.equal(cache.isHistorySynced('d/x'), true);
@@ -121,6 +130,11 @@ describe('NameCache', () => {
     assert.equal(top[1].address, 'Nsmall');
     assert.equal(Number(top[1].live), 1);
     assert.equal(top.some((r) => r.address === ''), false);
+    assert.equal(cache.countAddresses(), 2);
+    const names = cache.namesByAddress('Nbig');
+    assert.equal(names.length, 3);
+    assert.ok(cache.addressSeen('Nbig'));
+    assert.equal(cache.addressSeen('Nnobody'), false);
     cache.close();
   });
 
@@ -151,6 +165,7 @@ describe('NameCache', () => {
     assert.equal(counts.get(20), 1);
     assert.equal(counts.has(24), false);
     assert.equal(cache.opCountsByHeight([25], { hideCommitments: false }).get(25), 2);
+    assert.equal(cache.opsAtHeight(25, { hideCommitments: false }).length, 2);
 
     const from10 = cache.pageHeaders({ maxHeight: 10, limit: 5 });
     assert.equal(from10.map((b) => b.height).join(','), '10,9,8,7,6');

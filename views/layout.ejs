@@ -38,7 +38,7 @@
   <% if (seo.jsonLd) { %>
   <script type="application/ld+json"><%- seo.jsonLd %></script>
   <% } %>
-  <link rel="stylesheet" href="/css/explorer.css?v=66">
+  <link rel="stylesheet" href="/css/explorer.css?v=72">
   <script>
     try {
       var savedTheme = localStorage.getItem('nmc-theme');
@@ -66,12 +66,32 @@
   <aside class="sidebar" id="sidebar">
     <a href="/" class="brand" aria-label="<%= t('app.title') %>"><%- include('includes/_logo', {}) %></a>
     <nav class="nav" aria-label="<%= t('nav.primary') %>">
-      <a class="<%= locals.page==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'compass'}) %><span><%= t('nav.home') %></span></a>
-      <a class="<%= locals.page==='names'?'active':'' %>" href="/names"><%- include('includes/_icon', {icon:'search'}) %><span><%= t('nav.names') %></span></a>
-      <a class="<%= locals.page==='operations'?'active':'' %>" href="/operations"><%- include('includes/_icon', {icon:'activity'}) %><span><%= t('nav.operations') %></span></a>
-      <a class="<%= locals.page==='blocks'?'active':'' %>" href="/blocks"><%- include('includes/_icon', {icon:'blocks'}) %><span><%= t('nav.blocks') %></span></a>
-      <a class="<%= locals.page==='stats'?'active':'' %>" href="/stats"><%- include('includes/_icon', {icon:'chart'}) %><span><%= t('nav.stats') %></span></a>
-      <a class="<%= locals.page==='api'?'active':'' %>" href="/api/stats"><%- include('includes/_icon', {icon:'code'}) %><span><%= t('nav.api') %></span></a>
+      <% const pg = locals.page; const namesOpen = pg==='names'||pg==='name'||pg==='namespace'||pg==='operations'; const explorerOpen = pg==='blocks'||pg==='txs'||pg==='address'; %>
+      <a class="<%= pg==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'compass'}) %><span><%= t('nav.home') %></span></a>
+      <details class="nav-group<%= namesOpen ? ' current' : '' %>"<%= namesOpen ? ' open' : '' %>>
+        <summary>
+          <%- include('includes/_icon', {icon:'tag'}) %>
+          <span><%= t('nav.sectionNames') %></span>
+        </summary>
+        <div class="nav-sub">
+          <a class="<%= pg==='names'?'active':'' %>" href="/names"><%- include('includes/_icon', {icon:'search'}) %><span><%= t('nav.names') %></span></a>
+          <a class="<%= pg==='namespace'?'active':'' %>" href="/namespaces"><%- include('includes/_icon', {icon:'layers'}) %><span><%= t('nav.namespaces') %></span></a>
+          <a class="<%= pg==='operations'?'active':'' %>" href="/operations"><%- include('includes/_icon', {icon:'activity'}) %><span><%= t('nav.operations') %></span></a>
+        </div>
+      </details>
+      <details class="nav-group<%= explorerOpen ? ' current' : '' %>"<%= explorerOpen ? ' open' : '' %>>
+        <summary>
+          <%- include('includes/_icon', {icon:'blocks'}) %>
+          <span><%= t('nav.sectionExplorer') %></span>
+        </summary>
+        <div class="nav-sub">
+          <a class="<%= pg==='blocks'?'active':'' %>" href="/blocks"><%- include('includes/_icon', {icon:'blocks'}) %><span><%= t('nav.blocks') %></span></a>
+          <a class="<%= pg==='txs'?'active':'' %>" href="/tx"><%- include('includes/_icon', {icon:'file-text'}) %><span><%= t('nav.transactions') %></span></a>
+          <a class="<%= pg==='address'?'active':'' %>" href="/addresses"><%- include('includes/_icon', {icon:'hash'}) %><span><%= t('nav.addresses') %></span></a>
+        </div>
+      </details>
+      <a class="<%= pg==='stats'?'active':'' %>" href="/stats"><%- include('includes/_icon', {icon:'chart'}) %><span><%= t('nav.stats') %></span></a>
+      <a class="<%= pg==='api'?'active':'' %>" href="/api/stats"><%- include('includes/_icon', {icon:'code'}) %><span><%= t('nav.api') %></span></a>
     </nav>
     <div class="sidebar-dock">
       <div class="status-box">
@@ -125,7 +145,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.9' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.9' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.0' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.0' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>
@@ -220,36 +240,74 @@
     // ---------- live search ----------
     const sinput = document.querySelector('.search input');
     const sresults = document.querySelector('.search-results');
+    const kindLabels = {
+      name: <%- JSON.stringify(t('search.kindName')) %>,
+      block: <%- JSON.stringify(t('search.kindBlock')) %>,
+      tx: <%- JSON.stringify(t('search.kindTx')) %>,
+      address: <%- JSON.stringify(t('search.kindAddress')) %>,
+    };
     if (sinput && sresults) {
       let timer;
+      let lastItems = [];
+      const renderItems = (items) => {
+        lastItems = items || [];
+        sresults.replaceChildren();
+        if (!lastItems.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = <%- JSON.stringify(t('search.noMatch')) %>;
+          sresults.appendChild(empty);
+        } else {
+          for (const i of lastItems) {
+            const a = document.createElement('a');
+            a.href = i.href || ('/name/' + encodeURIComponent(i.name || ''));
+            const lab = document.createElement('span');
+            lab.className = 'search-label';
+            lab.textContent = i.label || i.name || '';
+            const kind = document.createElement('span');
+            kind.className = 'search-kind';
+            kind.textContent = kindLabels[i.kind] || '';
+            a.appendChild(lab);
+            a.appendChild(kind);
+            sresults.appendChild(a);
+          }
+        }
+        sresults.style.display = 'block';
+      };
       sinput.addEventListener('input', () => {
         clearTimeout(timer);
         const q = sinput.value.trim();
-        if (q.length < 2) { sresults.replaceChildren(); sresults.style.display='none'; return; }
+        const allowShort = /^\d+$/.test(q);
+        if (!q.length || (q.length < 2 && !allowShort)) {
+          lastItems = [];
+          sresults.replaceChildren();
+          sresults.style.display='none';
+          return;
+        }
         timer = setTimeout(async () => {
           try {
             const r = await fetch('/api/search?q=' + encodeURIComponent(q));
             const j = await r.json();
-            const items = j.items || [];
-            sresults.replaceChildren();
-            if (!items.length) {
-              const empty = document.createElement('div');
-              empty.className = 'empty';
-              empty.textContent = <%- JSON.stringify(t('search.noMatch')) %>;
-              sresults.appendChild(empty);
-            } else {
-              for (const i of items) {
-                const a = document.createElement('a');
-                a.href = '/name/' + encodeURIComponent(i.name);
-                a.textContent = i.name == null ? '' : String(i.name);
-                sresults.appendChild(a);
-              }
-            }
-            sresults.style.display = 'block';
+            renderItems(j.items || []);
           } catch(e) {}
         }, 250);
       });
-      sinput.addEventListener('keydown', (e)=>{ if(e.key==='Escape'||e.key==='Enter'){ sresults.style.display='none'; }});
+      sinput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { sresults.style.display = 'none'; return; }
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const q = sinput.value.trim();
+        const exact = lastItems.filter((i) => i && i.exact && i.href);
+        const go = exact.length ? exact[0] : lastItems[0];
+        if (go && go.href) { window.location.href = go.href; return; }
+        if (!q) { sresults.style.display = 'none'; return; }
+        if (/^\d+$/.test(q)) { window.location.href = '/block/' + q; return; }
+        if (/^(0x)?[0-9a-fA-F]{64}$/.test(q)) {
+          window.location.href = '/tx/' + q.replace(/^0x/i, '').toLowerCase();
+          return;
+        }
+        window.location.href = '/names?q=' + encodeURIComponent(q);
+      });
     }
   </script>
 </body>

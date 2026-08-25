@@ -17,7 +17,7 @@ npm run dev          # node --watch
 # http://127.0.0.1:3100
 ```
 
-`namecoind` is the source of truth. `data/cache.db` is the browse index. Do not “fix” a name page from the cache alone — check the node.
+`namecoind` is the source of truth when it answers. `data/cache.db` is the browse index and the HTML fallback when RPC is down. Do not invent name values the node never produced.
 
 Against a remote loopback-only node (dev): `npm run dev:vps` opens an SSH tunnel to `localhost:18336` and starts the app. Do not publish RPC.
 
@@ -26,17 +26,23 @@ Scratch node: point `NMC_RPC_*` at testnet/regtest and `NMC_CACHE_DB` at a throw
 ## Layout
 
 ```
-app.js                 boot, locals, explorer home, /names, /name, /health
+app.js                 boot, locals, home, /names, /name, /health
 lib/
   rpc.js               JSON-RPC (cookie, hex encodings, concurrency)
   ingest.js            block follow + paged name_scan
   cache.js             SQLite WAL + FTS5
+  search.js            header lookup (name / height / tx / address)
+  seo.js               titles, canonical, OG, sitemap
   api-json.js          JSON vs HTML wrapper
   i18n.js              t() / pickLang
-  names.js             values + timeline inferences
+  names.js             values, timeline, showFromCache
   txops.js             NAME_NEW / FIRSTUPDATE / UPDATE
   expiry.js            36000 / 4032
-  routes.js            ops, blocks, txs, stats, /api/*
+  statsdata.js         stats page + header tickers
+  markets.js           CoinPaprika / CoinGecko
+  chainmetrics.js      hashrate from difficulty
+  svgchart.js          inline SVG charts
+  routes.js            namespaces, ops, blocks, txs, addresses, stats, /api/*
 locales/               en.json, de.json  (restart after edits)
 views/                 EJS (layout, pages, includes/_icon.ejs)
 public/css/            explorer.css
@@ -48,10 +54,10 @@ scripts/dev-vps.ps1    local UI + SSH RPC tunnel
 ## Style
 
 - Node ≥ 20, CommonJS, `'use strict'`.
-- Fail loud. Do not invent RPC results.
+- Fail loud on RPC. HTML fallbacks must be labeled (see `tx.cacheNote` / `name.cacheNote`). Do not invent RPC results.
 - Small, existing patterns: `cache.*`, `rpc.call`, `sendApiJson`, `t()`.
 - After changing `explorer.css`, bump `?v=` in `views/layout.ejs`.
-- After changing locales, restart Node (catalogs load at require time).
+- After changing locales, restart Node (catalogs load at require time). Keep `en.json` and `de.json` in sync.
 - Keep PRs small. Run `node --check` on touched JS.
 
 ### UI
@@ -60,10 +66,10 @@ The live design is `public/css/explorer.css`, not Bulma and not `brutalist.css`.
 
 - Zinc neutrals. Namecoin blue (`#3a6ea5`) as accent only.
 - Flat panels. No glass, no mesh, no leftover inset “active” bars.
-- Sidebar labels match the product: Explorer, Name Browser, Name Operations, Blocks, Statistics, JSON API.
+- Sidebar: Home; **Names** (Name Browser, Namespaces, Name Operations); **Explorer** (Blocks, Transactions, Addresses); Statistics; JSON API.
 - Page heading icons must match the sidebar icon for that section.
-- Cards in a `.grid` row share height (`align-items: stretch`). Do not `align-self: start` a sibling to “fix” empty space.
-- Long names: `table-layout: fixed` + ellipsis + `title=`.
+- Cards in a `.grid` row share height (`align-items: stretch`). Use `.cols-3` / `.cols-4` that match the number of cards. Do not `align-self: start` a sibling to “fix” empty space.
+- Long names: `table-layout: fixed` + ellipsis + `title=`. Empty `NAME_NEW` names: “hidden”, not `/name/`.
 - In page scripts, stringify with `<%- JSON.stringify(...) %>`.
 
 ## Tests
@@ -73,7 +79,7 @@ npm test
 npm run check
 ```
 
-CI: `node --check` on `app.js` and `lib/*.js`, compile top-level EJS, `npm test`. Add tests next to `cache`, `txops`, `expiry`, `ingest`, `api-json` when behaviour changes.
+CI: `node --check` on `app.js` and `lib/*.js`, compile top-level EJS, `npm test`. Add tests next to the module you change (`cache`, `txops`, `search`, `seo`, `views`, …).
 
 Against a running node:
 
@@ -91,7 +97,7 @@ Use the GitHub templates. Include the exact URL, expected vs actual, and whether
 Security bugs: [SECURITY.md](SECURITY.md) only — no public issue.
 
 1. Branch from `main`: `feat/…` or `fix/…`.
-2. Update docs when behaviour or env vars change.
+2. Update docs when behaviour or env vars change (`README`, `ARCHITECTURE`, `docs/DEPLOYMENT` as needed).
 3. Open the PR against `main`. `Closes #n` when it does.
 
 ## Principles

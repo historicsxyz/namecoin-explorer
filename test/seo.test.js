@@ -118,6 +118,27 @@ describe('buildSeo', () => {
     assert.equal(blocksOps.noindex, true);
     const blocksPlain = buildSeo(req({ path: '/blocks' }), resLocals('blocks'));
     assert.equal(blocksPlain.noindex, false);
+
+    const nsIndex = buildSeo(req({ path: '/namespaces' }), resLocals('namespace'));
+    assert.match(nsIndex.title, /Namespaces/);
+    const nsPage = buildSeo(
+      req({ path: '/namespace/d', params: { ns: 'd' } }),
+      resLocals('namespace'),
+      { ns: 'd' },
+    );
+    assert.match(nsPage.title, /d\//);
+    assert.match(nsPage.jsonLd, /\/namespaces/);
+
+    const txIndex = buildSeo(req({ path: '/tx' }), resLocals('txs'));
+    assert.match(txIndex.title, /Transactions/);
+    const addrIndex = buildSeo(req({ path: '/addresses' }), resLocals('address'));
+    assert.match(addrIndex.title, /Addresses/);
+    const addrPage = buildSeo(
+      req({ path: '/address/Nabc', params: { addr: 'Nabc' } }),
+      resLocals('address'),
+      { addr: 'Nabc' },
+    );
+    assert.match(addrPage.title, /Nabc/);
   });
 
   it('uses German copy when lang is de', () => {

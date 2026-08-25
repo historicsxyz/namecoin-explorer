@@ -115,9 +115,9 @@ describe('IngestService.stop', () => {
 
 describe('i18n', () => {
   it('falls back to English and interpolates', () => {
-    assert.equal(t('en', 'nav.home'), 'Explorer');
-    assert.equal(t('de', 'nav.home'), 'Explorer');
-    assert.equal(t('xx', 'nav.home'), 'Explorer');
+    assert.equal(t('en', 'nav.home'), 'Home');
+    assert.equal(t('de', 'nav.home'), 'Start');
+    assert.equal(t('xx', 'nav.home'), 'Home');
     assert.match(t('en', 'ops.chainTip', { n: 12 }), /12/);
   });
 

@@ -30,7 +30,7 @@
           <% (tx._nameOps||[]).forEach(o => { %>
           <tr>
             <td><%- include('includes/_op-pill', { op: o.op }) %></td>
-            <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
+            <td class="mono"><% if (o.name) { %><a href="/name/<%= encodeURIComponent(o.name) %>"><%= o.name %></a><% } else { %><span class="muted"><%= t('ops.hiddenName') %></span><% } %></td>
             <td class="mono" style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><%= String(o.value||'').slice(0,40) %></td>
             <td class="mono"><a href="/tx/<%= tx.txid %>"><%= tx.txid.slice(0,14) %>…</a></td>
           </tr>

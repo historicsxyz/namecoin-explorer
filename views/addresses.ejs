@@ -1,0 +1,32 @@
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'hash'}) %> <%= t('addresses.title') %></h1></div>
+
+<div class="panel">
+  <% if (!(rows || []).length) { %>
+    <p class="muted"><%= t('addresses.empty') %></p>
+  <% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th><%= t('addresses.address') %></th>
+        <th><%= t('addresses.live') %></th>
+        <th><%= t('addresses.total') %></th>
+        <th><%= t('addresses.expired') %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% const base = ((pager && pager.page > 1) ? (pager.page - 1) * pager.limit : 0); %>
+      <% rows.forEach((r, i) => { %>
+      <tr class="row-link" data-href="/address/<%= encodeURIComponent(r.address) %>">
+        <td class="mono"><%= base + i + 1 %></td>
+        <td class="mono"><a class="row-link-hit" href="/address/<%= encodeURIComponent(r.address) %>" title="<%= r.address %>"><%= r.address %></a></td>
+        <td style="color:var(--green)"><%= nfmt(Number(r.live) || 0) %></td>
+        <td><%= nfmt(Number(r.total) || 0) %></td>
+        <td style="color:var(--red)"><%= nfmt(Number(r.expired) || 0) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <%- include('includes/_pager') %>
+  <% } %>
+</div>

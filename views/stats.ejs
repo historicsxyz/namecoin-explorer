@@ -163,7 +163,7 @@
       <% (stats.topAddresses || []).forEach((r, i) => { const pct = stats.addrMax ? 100 * (r.live || 0) / stats.addrMax : 0; %>
       <tr>
         <td class="mono"><%= i + 1 %></td>
-        <td class="mono holders-addr" title="<%= r.address %>"><%= r.address %></td>
+        <td class="mono holders-addr" title="<%= r.address %>"><a href="/address/<%= encodeURIComponent(r.address) %>"><%= r.address %></a></td>
         <td class="ns-share"><span class="ns-bar" aria-hidden="true"><span style="width:<%= pct.toFixed(1) %>%"></span></span></td>
         <td style="color:var(--green)"><%= nfmt(Number(r.live) || 0) %></td>
         <td><%= nfmt(Number(r.total) || 0) %></td>

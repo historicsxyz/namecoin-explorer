@@ -18,9 +18,11 @@ const { attachSeo, registerSeoRoutes } = require('./lib/seo');
 const {
   renderValue,
   timelineFromOps,
+  showFromCache,
 } = require('./lib/names');
 const { SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
 const { headerTickers } = require('./lib/statsdata');
+const { lookupItems } = require('./lib/search');
 const registerRoutes = require('./lib/routes');
 
 function loadEnvFile(file) {
@@ -147,7 +149,7 @@ function homeBlockSummary(cache, hdr) {
   if (!hdr) return null;
   const prevHdr = hdr.height > 0 ? cache.headerAt(hdr.height - 1) : null;
   let nameOpCount = 0;
-  try { nameOpCount = cache.opsAtHeight(hdr.height).length; } catch { /* empty index */ }
+  try { nameOpCount = cache.opsAtHeight(hdr.height, { hideCommitments: false }).length; } catch { /* empty index */ }
   return {
     hash: hdr.hash,
     height: hdr.height,
@@ -203,11 +205,11 @@ app.get('/names', async (req, res) => {
 });
 
 app.get('/api/search', async (req, res) => {
-  const q = (req.query.q || '').slice(0, 50);
+  const q = (req.query.q || '').slice(0, 80);
   if (!q) return sendApiJson(req, res, { items: [] });
   try {
-    const rows = cache.search(q, 30);
-    sendApiJson(req, res, { items: rows.map((r) => ({ name: r.name })) });
+    const items = await lookupItems(q, { cache, rpc, limit: 12 });
+    sendApiJson(req, res, { items });
   } catch (e) { sendApiJson(req, res, { items: [] }); }
 });
 
@@ -216,12 +218,22 @@ app.get('/name/:name', async (req, res) => {
   const rawName = req.params.name;
   const cached = (() => { try { return cache.get(rawName); } catch { return null; } })();
 
-  let show = null, pending = [];
+  let show = null, pending = [], fromCache = false;
   try { show = await rpc.nameShow(rawName); }
-  catch (e) { res.locals.nameError = e.message; }
+  catch (e) {
+    if (cached) {
+      let last = null;
+      try { last = cache.lastOpForName(rawName); } catch { /* empty index */ }
+      show = showFromCache(cached, last);
+      fromCache = true;
+    } else {
+      res.locals.nameError = e.message;
+    }
+  }
 
-  let ops = cache.opsForName(rawName);
-  if (!cache.isHistorySynced(rawName)) {
+  let ops = [];
+  try { ops = cache.opsForName(rawName); } catch { ops = []; }
+  if (!fromCache && !cache.isHistorySynced(rawName)) {
     try {
       const filled = await ingest.backfillName(rawName);
       if (filled) ops = filled;
@@ -312,7 +324,7 @@ app.get('/name/:name', async (req, res) => {
 
   res.render('name', {
     name: rawName, displayName: rawName,
-    show, decoded, history: timeline, pending, cached, record,
+    show, decoded, history: timeline, pending, cached, record, fromCache,
   });
 });
 

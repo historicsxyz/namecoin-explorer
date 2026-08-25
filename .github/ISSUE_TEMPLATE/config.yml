@@ -8,4 +8,4 @@ contact_links:
     about: Public instance (nmc.historics.xyz)
   - name: Documentation
     url: https://github.com/historicsxyz/namecoin-explorer/blob/main/docs/README.md
-    about: Architecture, deployment, and contributing
+    about: README, architecture, deployment, and contributing

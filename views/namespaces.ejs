@@ -1,0 +1,21 @@
+<div class="topbar"><h1><%- include('includes/_icon', {icon:'layers'}) %> <%= t('namespaces.title') %></h1></div>
+
+<div class="panel">
+  <% if (namespaces && namespaces.length) { %>
+  <table>
+    <thead><tr><th><%= t('home.prefix') %></th><th><%= t('home.total') %></th><th><%= t('home.live') %></th><th><%= t('home.expired') %></th></tr></thead>
+    <tbody>
+      <% namespaces.forEach(r => { %>
+      <tr class="row-link" data-href="/namespace/<%= r.namespace.replace(/\/$/,'') %>">
+        <td class="mono"><a class="row-link-hit" href="/namespace/<%= r.namespace.replace(/\/$/,'') %>"><%= r.namespace %></a></td>
+        <td><%= nfmt(r.total) %></td>
+        <td style="color:var(--green)"><%= nfmt(r.live||0) %></td>
+        <td style="color:var(--red)"><%= nfmt(r.expired||0) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+    <p class="muted"><%= t('namespaces.empty') %></p>
+  <% } %>
+</div>

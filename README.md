@@ -22,27 +22,41 @@ A registry-first explorer: names are the product, blocks and txs sit underneath.
 
 - Browse the on-chain registry with namespace and expiry filters
 - Open any name for the current record plus a typed, dated operation timeline
-- Follow confirmed `OP_NAME_*` ops and the mempool
+- Jump from the header search to a name, height, txid, or address
+- Follow confirmed `NAME_NEW` / `NAME_FIRSTUPDATE` / `NAME_UPDATE` ops and the mempool
+- Inspect blocks, transactions, and name-holding addresses
+- Stats: NMC price, hashrate, registry, and chain
+- English and German (`?lang=en` / `?lang=de`, or `Accept-Language`)
 - Query the same data over JSON (or a browser HTML wrapper)
 
-The node stays authoritative. SQLite is the browse index.
+The node stays authoritative when it is reachable. SQLite is the browse index, and the fallback when RPC is down.
 
 ## Pages
 
 | Path | UI |
 |------|----|
-| `/` | Explorer — tip, namespaces, recent / expiring names |
-| `/names` | Name Browser — search, namespace, live / expiring / expired |
-| `/name/:name` | Current record + provenance timeline |
-| `/namespace/:ns` | One prefix (`d`, `id`, …) |
-| `/operations` | Confirmed name ops (`?op=`, `?commitments=1`) |
-| `/operations/pending` | Mempool name ops |
-| `/blocks`, `/block/:hash` | Headers and a single block |
-| `/tx/:txid` | Transaction + name ops |
+| `/` | Home — tip, namespaces, recent / expiring names |
+| `/names` | Registry — search, namespace, live / expiring / expired |
+| `/name/:name` | Current record + operation timeline |
+| `/namespaces` | Namespace prefixes (`d/`, `id/`, …) |
+| `/namespace/:ns` | Names in one prefix |
+| `/operations` | Confirmed name ops (`?op=` to filter; `NAME_NEW` only when selected) |
+| `/operations/pending` | Unconfirmed name ops in the mempool |
+| `/blocks`, `/block/:hash` | Headers and a single block (height or hash) |
+| `/tx`, `/tx/:txid` | Recent transactions and a single tx |
+| `/addresses`, `/address/:addr` | Name-holding addresses |
 | `/stats` | Price, hashrate, registry, chain |
 | `/api/*` | JSON API (HTML when opened in a browser) |
 
-Language: `?lang=en` / `?lang=de`, or `Accept-Language`. Theme toggle is stored locally.
+Theme toggle is stored locally. Name-op counts on `/` and `/blocks` include every consensus op (`NAME_NEW` included). The operations feed hides `NAME_NEW` unless you pick it in the filter.
+
+### When the node is down
+
+Lists, search, namespaces, addresses, and confirmed ops keep serving from SQLite.
+
+`/name/:name` and `/tx/:txid` show indexed name data and say so. `/tx` lists recent name-operation txids (and fills any recent block that fails `getblock`).
+
+Mempool, live `name_show`, full transaction inputs/outputs, and `/block/:hash` still need RPC. Those pages surface the error instead of pretending the mempool is empty.
 
 ## Quick start
 
@@ -81,6 +95,7 @@ See [`.env.example`](.env.example).
 | `NMC_CACHE_DB` | `./data/cache.db` | SQLite index (one writer) |
 | `NMC_ZMQ_HASHBLOCK` | *(unset)* | Optional `tcp://` / `ipc://` `hashblock`. 10s poll stays as watchdog. `npm install zeromq` |
 | `NMC_INGEST_FROM` | *(unset)* | `0` or `genesis` = first run from height 0. Default is tip−36,000 |
+| `NMC_MARKET` | *(on)* | Set `0` to skip CoinPaprika / CoinGecko on an air-gapped host |
 
 ## JSON API
 
@@ -91,11 +106,11 @@ Scripts and `curl` get `application/json`. A browser tab gets an HTML wrapper so
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/stats` | Totals, namespaces, chain, market, hashrate |
-| `GET /api/search?q=` | Name autocomplete (max 30) |
+| `GET /api/search?q=` | Lookup: name, height, txid, or address |
 | `GET /api/names?limit=&start=&ns=` | Paginated registry |
-| `GET /api/name/:name` | Current `name_show` record |
-| `GET /api/name/:name/history` | `name_history` |
-| `GET /api/name/:name/pending` | Mempool ops for that name |
+| `GET /api/name/:name` | Current `name_show` record (live RPC) |
+| `GET /api/name/:name/history` | `name_history` (live RPC) |
+| `GET /api/name/:name/pending` | Mempool ops for that name (live RPC) |
 | `GET /api/health` | Liveness, tip, catch-up (`/health` is the same) |
 
 ```bash
@@ -104,27 +119,32 @@ curl -s http://127.0.0.1:3100/api/name/d%2Fbitcoin
 curl -s "http://127.0.0.1:3100/api/search?q=bit"
 ```
 
+The JSON name endpoints talk to the node. HTML pages can fall back to the index when RPC fails; `curl` still sees the RPC error.
+
 ## How it is built
 
 ```
 Browser ──HTTP──► Explorer (Express, 127.0.0.1:3100)
-                    ├─ lib/rpc.js       JSON-RPC (cookie, hex encodings)
-                    ├─ lib/ingest.js    block follow + paged name_scan
-                    ├─ lib/cache.js     SQLite WAL (names, name_ops, headers, FTS5)
-                    ├─ lib/txops.js     NAME_NEW / FIRSTUPDATE / UPDATE
-                    ├─ lib/names.js     values + TRANSFER / RENEW inference
-                    ├─ lib/expiry.js    36,000 expire / 4,032 semi-expire
-                    ├─ lib/i18n.js      en / de catalogs
-                    └─ lib/api-json.js  JSON vs HTML wrapper
+                    ├─ lib/rpc.js         JSON-RPC (cookie, hex encodings)
+                    ├─ lib/ingest.js      block follow + paged name_scan
+                    ├─ lib/cache.js       SQLite WAL (names, name_ops, headers, FTS5)
+                    ├─ lib/search.js      header lookup
+                    ├─ lib/txops.js       NAME_NEW / FIRSTUPDATE / UPDATE
+                    ├─ lib/names.js       values + TRANSFER / RENEW inference
+                    ├─ lib/expiry.js      36,000 expire / 4,032 semi-expire
+                    ├─ lib/i18n.js        en / de catalogs
+                    ├─ lib/seo.js         title, canonical, OG, sitemap
+                    ├─ lib/statsdata.js   stats + header tickers
+                    └─ lib/api-json.js    JSON vs HTML wrapper
                          │
                          ▼
                    namecoind  127.0.0.1:8336
                    txindex=1  namehistory=1
 ```
 
-- **Fail loud.** RPC errors are thrown. The client never invents “available / not found”.
+- **Fail loud.** When RPC is up, errors are thrown. The client never invents “available / not found”.
 - **One writer.** Ingest is the only process that writes `cache.db`. HTTP only reads.
-- **Node for the object, index for the list.** `name_show` is live; `/names` and search are SQLite.
+- **Node when reachable, index for lists and fallbacks.** `name_show` is live; `/names`, search, and the HTML fallbacks are SQLite.
 
 Deep dive: [ARCHITECTURE.md](ARCHITECTURE.md).
 

@@ -1,20 +1,16 @@
 <div class="topbar"><h1><%- include('includes/_icon', {icon:'activity'}) %> <%= t('opsPending.title') %></h1></div>
 
-<%- include('includes/_infonote', { note: t('opsPending.note') }) %>
+<% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
 
 <div class="filterbar">
-  <form action="/operations/pending" method="get">
-    <label class="filterbar-check">
-      <input type="checkbox" name="commitments" value="1" <%= (typeof commitments !== 'undefined' && commitments) ? 'checked' : '' %> onchange="this.form.submit()">
-      <%= t('opsPending.showCommitments') %>
-    </label>
-    <a class="btn btn-ghost" href="/operations"><%= t('opsPending.confirmed') %></a>
-  </form>
+  <a class="btn btn-ghost" href="/operations"><%= t('opsPending.confirmed') %></a>
+  <% if (!(typeof error !== 'undefined' && error)) { %>
   <div class="filterbar-meta">
     <span><%= t('opsPending.mempool', { n: (mempoolInfo && mempoolInfo.size != null) ? mempoolInfo.size : '…' }) %></span>
     <span><%= t('opsPending.count', { n: (pending||[]).length }) %></span>
     <span><%= t('ops.updated') %> <span data-live-updated><%= now ? new Date(now).toLocaleTimeString() : '' %></span></span>
   </div>
+  <% } %>
 </div>
 
 <div class="panel">
@@ -23,12 +19,12 @@
     <tbody>
       <% (pending||[]).forEach(p => { %>
         <tr>
-          <td class="mono"><a href="/name/<%= encodeURIComponent(p.name) %>"><%= p.name %></a></td>
+          <td class="mono"><% if (p.name) { %><a href="/name/<%= encodeURIComponent(p.name) %>"><%= p.name %></a><% } else { %><span class="muted"><%= t('ops.hiddenName') %></span><% } %></td>
           <td><%- include('includes/_op-pill', { op: p.op }) %></td>
           <td class="mono" style="max-width:300px;word-break:break-all;white-space:pre-wrap"><%= String(p.value||'') %></td>
         </tr>
       <% }) %>
-      <% if (!pending || pending.length===0) { %>
+      <% if ((!pending || pending.length===0) && !(typeof error !== 'undefined' && error)) { %>
         <tr><td colspan="3" class="empty">
           <%= (mempoolInfo && mempoolInfo.size > 0) ? t('opsPending.emptyHasTx') : t('opsPending.empty') %>
         </td></tr>

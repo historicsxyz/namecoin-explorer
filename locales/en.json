@@ -3,10 +3,15 @@
     "title": "Namecoin Explorer"
   },
   "nav": {
-    "home": "Explorer",
+    "home": "Home",
     "names": "Name Browser",
+    "sectionNames": "Names",
+    "namespaces": "Namespaces",
     "operations": "Name Operations",
+    "sectionExplorer": "Explorer",
     "blocks": "Blocks",
+    "transactions": "Transactions",
+    "addresses": "Addresses",
     "stats": "Statistics",
     "api": "JSON API",
     "primary": "Primary"
@@ -24,8 +29,12 @@
     "unknown": "unknown"
   },
   "search": {
-    "placeholder": "Search a name — d/bitcoin, id/example…",
-    "noMatch": "no match"
+    "placeholder": "Name, height, txid, or address…",
+    "noMatch": "no match",
+    "kindName": "Name",
+    "kindBlock": "Block",
+    "kindTx": "Transaction",
+    "kindAddress": "Address"
   },
   "ticker": {
     "price": "NMC",
@@ -52,7 +61,7 @@
   "error": {
     "title": "Page not found",
     "lead": "That URL is not a page in this Namecoin explorer.",
-    "home": "Explorer home",
+    "home": "Home",
     "names": "Name Browser"
   },
   "seo": {
@@ -75,7 +84,11 @@
     "txTitle": "Tx {id}",
     "stats": "Namecoin price, hashrate, registry totals, and chain metrics.",
     "api": "Machine-readable JSON from this Namecoin explorer.",
-    "og": "Open Graph share card for Namecoin Explorer."
+    "og": "Open Graph share card for Namecoin Explorer.",
+    "namespaces": "Namecoin namespaces with live and expired name counts.",
+    "txs": "Look up a Namecoin transaction by txid, or browse recent transactions from the latest blocks.",
+    "addresses": "Namecoin addresses that currently hold names, ranked by live names.",
+    "address": "Names and name operations for address {addr}."
   },
   "og": {
     "title": "Open Graph",
@@ -145,6 +158,7 @@
     "inferred": "inferred",
     "noHistory": "No operation history available.",
     "noRecord": "No active record for this name.",
+    "cacheNote": "The node is unreachable. The record and history below are from the local index; mempool ops need RPC.",
     "pendingOps": "Pending (mempool) Operations",
     "op": "Op"
   },
@@ -155,11 +169,11 @@
   },
   "ops": {
     "title": "Name Operations",
-    "confirmedNote": "These are <strong>confirmed</strong> name operations that have been mined into blocks. Before mining, they briefly wait unconfirmed in the mempool (see <a href=\"/operations/pending\">Pending Name Operations</a>). <code>name_new</code> commitments do not reveal the name until <code>name_firstupdate</code> — they are hidden unless you opt in.",
     "all": "All operations",
+    "new": "NAME_NEW / commitment",
     "firstupdate": "NAME_FIRSTUPDATE / register",
     "update": "NAME_UPDATE",
-    "showCommitments": "Show NAME_NEW commitments",
+    "hiddenName": "hidden",
     "pending": "Pending (mempool)",
     "chainTip": "chain tip #{n}",
     "lastOp": "last op at #{n}",
@@ -174,8 +188,6 @@
   },
   "opsPending": {
     "title": "Pending Name Operations",
-    "note": "These are the <strong>name operations only</strong> waiting unconfirmed in the mempool. <code>name_new</code> commitments do not reveal the name until <code>name_firstupdate</code> and are hidden unless you opt in. Confirmed ops: <a href=\"/operations\">Name Operations</a>.",
-    "showCommitments": "Show NAME_NEW commitments",
     "confirmed": "Confirmed (on-chain)",
     "mempool": "mempool: {n}",
     "count": "{n} name operation(s) pending",
@@ -186,7 +198,8 @@
     "empty": "The mempool is empty — there are no unconfirmed transactions at all right now."
   },
   "ns": {
-    "totalNames": "Total {ns}/ names",
+    "title": "{ns}",
+    "totalNames": "Total {ns} names",
     "live": "Live",
     "expired": "Expired",
     "allStatus": "All status",
@@ -318,6 +331,45 @@
     "outputs": "Outputs",
     "index": "Index",
     "address": "Address",
-    "type": "Type"
+    "type": "Type",
+    "cacheNote": "The node is unreachable. Name operations below are from the local index; inputs and outputs need RPC."
+  },
+  "namespaces": {
+    "title": "Namespaces",
+    "empty": "No namespaces in the index yet."
+  },
+  "txs": {
+    "title": "Transactions",
+    "lookupPlaceholder": "Txid (64 hex)…",
+    "lookup": "Look up",
+    "recent": "Recent transactions",
+    "block": "Block {n}",
+    "txid": "Txid",
+    "fallbackNote": "The node is unreachable. These are name-operation txids from the local index.",
+    "partialNote": "Some recent blocks could not be fetched from the node. Name-operation txids for those blocks are from the local index.",
+    "empty": "No recent transactions to show.",
+    "invalid": "That is not a 64-character transaction id."
+  },
+  "addresses": {
+    "title": "Addresses",
+    "empty": "No name-holding addresses indexed yet.",
+    "live": "Live",
+    "total": "Total",
+    "expired": "Expired",
+    "address": "Address"
+  },
+  "address": {
+    "title": "Address",
+    "names": "Names",
+    "ops": "Name operations",
+    "empty": "This address has not appeared in the name index.",
+    "noNames": "No names currently at this address.",
+    "noOps": "No name operations for this address.",
+    "name": "Name",
+    "status": "Status",
+    "updated": "Updated",
+    "operation": "Operation",
+    "block": "Block",
+    "tx": "Tx"
   }
 }

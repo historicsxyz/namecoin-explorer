@@ -1,6 +1,7 @@
-<div class="topbar"><h1 class="mono" style="font-size:20px"><%= tx ? tx.txid.slice(0,32) + '…' : t('tx.title') %></h1></div>
+<div class="topbar"><h1 class="mono" style="font-size:20px"><%= txid ? String(txid).slice(0,32) + (String(txid).length>32?'…':'') : t('tx.title') %></h1></div>
 
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+<% if (typeof fromCache !== 'undefined' && fromCache) { %><p class="muted"><%= t('tx.cacheNote') %></p><% } %>
 
 <% if (tx) { %>
 <div class="panel">
@@ -13,26 +14,38 @@
     <% if (tx.blocktime) { %><dt><%= t('tx.time') %></dt><dd><%= new Date(tx.blocktime*1000).toUTCString() %></dd><% } %>
   </dl>
 </div>
+<% } else if (nameOps && nameOps.length) { %>
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('tx.summary') %></h2>
+  <dl class="dl">
+    <dt><%= t('tx.txid') %></dt><dd class="mono"><%= txid %></dd>
+    <% const h0 = nameOps[0]; %>
+    <% if (h0 && h0.height != null) { %><dt><%= t('tx.block') %></dt><dd><a href="/block/<%= h0.height %>"><%= nfmt(h0.height) %></a></dd><% } %>
+    <% if (h0 && h0.time) { %><dt><%= t('tx.time') %></dt><dd><%= new Date(h0.time*1000).toUTCString() %></dd><% } %>
+  </dl>
+</div>
+<% } %>
 
-  <% if (nameOps && nameOps.length) { %>
-  <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'tag'}) %> <%= t('tx.nameOps') %></h2>
-    <table>
-      <thead><tr><th><%= t('tx.vout') %></th><th><%= t('tx.operation') %></th><th><%= t('tx.name') %></th><th><%= t('tx.value') %></th></tr></thead>
-      <tbody>
-        <% nameOps.forEach(o => { %>
-        <tr>
-          <td><%= o.vout %></td>
-          <td><%- include('includes/_op-pill', { op: o.op }) %></td>
-          <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
-          <td class="mono" style="max-width:280px;word-break:break-all;white-space:pre-wrap"><%= String(o.value||'') %></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-  <% } %>
+<% if (nameOps && nameOps.length) { %>
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'tag'}) %> <%= t('tx.nameOps') %></h2>
+  <table>
+    <thead><tr><th><%= t('tx.vout') %></th><th><%= t('tx.operation') %></th><th><%= t('tx.name') %></th><th><%= t('tx.value') %></th></tr></thead>
+    <tbody>
+      <% nameOps.forEach(o => { %>
+      <tr>
+        <td><%= o.vout %></td>
+        <td><%- include('includes/_op-pill', { op: o.displayOp || o.op }) %></td>
+        <td class="mono"><% if (o.name) { %><a href="/name/<%= encodeURIComponent(o.name) %>"><%= o.name %></a><% } else { %><span class="muted"><%= t('ops.hiddenName') %></span><% } %></td>
+        <td class="mono" style="max-width:280px;word-break:break-all;white-space:pre-wrap"><%= String(o.value||'') %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
 
+<% if (tx) { %>
   <div class="panel">
     <h2><%- include('includes/_icon', {icon:'box'}) %> <%= t('tx.outputs') %></h2>
     <table>
@@ -42,7 +55,7 @@
         <tr>
           <td><%= i %></td>
           <td class="mono"><%= o.value %></td>
-          <td class="mono" style="font-size:11px"><%= o.scriptPubKey.address||'—' %></td>
+          <td class="mono" style="font-size:11px"><% const addr = (o.scriptPubKey && (o.scriptPubKey.address || (o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]))) || ''; %><% if (addr) { %><a href="/address/<%= encodeURIComponent(addr) %>"><%= addr %></a><% } else { %>—<% } %></td>
           <td class="mono" style="font-size:11px;color:var(--dim)"><%= o.scriptPubKey.type %></td>
         </tr>
         <% }) %>

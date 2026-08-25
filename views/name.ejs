@@ -7,6 +7,7 @@
 <% } else if (typeof nameError !== 'undefined' && nameError) { %>
   <div class="error"><%= nameError %></div>
 <% } %>
+<% if (typeof fromCache !== 'undefined' && fromCache) { %><p class="muted"><%= t('name.cacheNote') %></p><% } %>
 
 <% if (show) { %>
 <% const ek = expiryKind(show); const rec = typeof record !== 'undefined' && record ? record : {}; %>
@@ -22,7 +23,7 @@
     </div>
     <div class="record-field">
       <span class="l"><%= t('name.owner') %></span>
-      <span class="v mono"><% if (show.address) { %><a href="/tx/<%= show.txid %>" title="<%= show.address %>"><%= shortId(show.address) %></a><% } else { %>—<% } %></span>
+      <span class="v mono"><% if (show.address) { %><a href="/address/<%= encodeURIComponent(show.address) %>" title="<%= show.address %>"><%= shortId(show.address) %></a><% } else { %>—<% } %></span>
     </div>
     <div class="record-field">
       <span class="l"><%= t('name.updatedAt') %></span>
@@ -71,7 +72,7 @@
             <span class="tl-height">blk <%= nfmt(h.height) %></span>
           </div>
           <div class="tl-body">
-            <% if (h.address) { %>→ <a href="/tx/<%= h.txid||'#' %>" class="mono" title="<%= h.address %>"><%= shortId(h.address) %></a><% } %>
+            <% if (h.address) { %>→ <a href="/address/<%= encodeURIComponent(h.address) %>" class="mono" title="<%= h.address %>"><%= shortId(h.address) %></a><% } %>
             <% if (h.txid) { %><span class="dim">· <a href="/tx/<%= h.txid %>" class="mono" title="<%= h.txid %>"><%= shortId(h.txid, 12, 8) %></a></span><% } %>
             <% if (h.inferred) { %><span class="pill gray" style="font-size:10px"><%= t('name.inferred') %></span><% } %>
           </div>

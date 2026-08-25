@@ -48,7 +48,10 @@
   </div>
 
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'layers'}) %> <%= t('home.namespaces') %></h2>
+    <h2>
+      <%- include('includes/_icon', {icon:'layers'}) %> <%= t('home.namespaces') %>
+      <% if (namespaces && namespaces.length) { %><a class="btn btn-ghost latest-block-link" href="/namespaces"><%= t('home.viewAll') %></a><% } %>
+    </h2>
     <table>
       <thead><tr><th><%= t('home.prefix') %></th><th><%= t('home.total') %></th><th><%= t('home.live') %></th><th><%= t('home.expired') %></th></tr></thead>
       <tbody>

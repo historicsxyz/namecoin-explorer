@@ -7,7 +7,7 @@ body:
     id: problem
     attributes:
       label: What problem does this solve?
-      description: Explorer home, Name Browser, operations, blocks, API, i18n, or the zinc UI?
+      description: Home, names, namespaces, operations, blocks, transactions, addresses, stats, API, i18n, or the zinc UI?
     validations:
       required: true
   - type: textarea

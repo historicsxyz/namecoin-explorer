@@ -1,0 +1,58 @@
+<div class="topbar">
+  <h1 class="mono" style="font-size:20px"><%= addr || t('address.title') %></h1>
+  <span class="crumb"><a href="/addresses"><%= t('nav.addresses') %></a></span>
+</div>
+
+<% if (!addr || (!seen && !(names||[]).length && !(ops||[]).length)) { %>
+  <div class="panel"><p class="muted"><%= t('address.empty') %></p></div>
+<% } else { %>
+
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'tag'}) %> <%= t('address.names') %></h2>
+  <% if (!(names||[]).length) { %>
+    <p class="muted"><%= t('address.noNames') %></p>
+  <% } else { %>
+  <table class="names-table">
+    <thead><tr><th><%= t('address.name') %></th><th><%= t('address.status') %></th><th><%= t('address.updated') %></th></tr></thead>
+    <tbody>
+      <% names.forEach(r => { %>
+      <tr class="row-link" data-href="/name/<%= encodeURIComponent(r.name) %>">
+        <td class="mono"><a class="row-link-hit" href="/name/<%= encodeURIComponent(r.name) %>" title="<%= r.name %>"><%= r.name || '—' %></a></td>
+        <td><% const ek = expiryKind(r); %><span class="pill <%= ek==='expired'?'red':ek==='expiring'?'yellow':'green' %>"><%= t('status.' + ek) %></span></td>
+        <td><%= nfmt(r.height) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('address.ops') %></h2>
+  <% if (!(ops||[]).length) { %>
+    <p class="muted"><%= t('address.noOps') %></p>
+  <% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th><%= t('address.operation') %></th>
+        <th><%= t('address.name') %></th>
+        <th><%= t('address.block') %></th>
+        <th><%= t('address.tx') %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% ops.forEach(o => { %>
+      <tr>
+        <td><%- include('includes/_op-pill', { op: o.displayOp || o.op }) %></td>
+        <td class="mono"><% if (o.name) { %><a href="/name/<%= encodeURIComponent(o.name) %>"><%= o.name %></a><% } else { %>—<% } %></td>
+        <td><% if (o.height != null) { %><a href="/block/<%= o.height %>"><%= nfmt(o.height) %></a><% } else { %>—<% } %></td>
+        <td class="mono" style="font-size:11px"><% if (o.txid) { %><a href="/tx/<%= o.txid %>"><%= o.txid.slice(0,12) %>…</a><% } else { %>—<% } %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<% } %>

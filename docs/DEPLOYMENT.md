@@ -119,5 +119,6 @@ Default first run: `tip − 36,000`. `NMC_INGEST_FROM=0` or `genesis` starts at 
 
 - First start follows ~36,000 blocks (unless genesis rewind) and bootstraps with `name_scan` pages of 500. `/operations` fills as blocks are ingested.
 - `txindex=1` and `namehistory=1` are required for lazy per-name history, not for the block-follow indexer itself.
+- If `namecoind` is down, HTML lists and search keep serving from SQLite. `/name` and `/tx/:txid` show indexed name data and say so. `/block/:hash`, mempool, and `/api/name/*` still need RPC. `/health` is the process, not the node.
 - Back up `data/cache.db` if you want; it will re-ingest if lost. Point `NMC_CACHE_DB` at a fast disk for a large index.
 - Local development against this VPS: SSH tunnel only (`npm run dev:vps`). That is not a production path.
