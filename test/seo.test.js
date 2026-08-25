@@ -115,7 +115,7 @@ describe('buildSeo', () => {
   it('uses German copy when lang is de', () => {
     const seo = buildSeo(req({ path: '/stats' }), resLocals('stats', 'de'));
     assert.match(seo.title, /Statistik/);
-    assert.match(seo.description, /Namensraum/);
+    assert.match(seo.description, /Hashrate/);
     assert.equal(seo.locale, 'de_DE');
   });
 });

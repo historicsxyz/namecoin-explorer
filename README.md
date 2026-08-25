@@ -39,7 +39,7 @@ The node stays authoritative. SQLite is the browse index.
 | `/operations/pending` | Mempool name ops |
 | `/blocks`, `/block/:hash` | Headers and a single block |
 | `/tx/:txid` | Transaction + name ops |
-| `/stats` | Registry totals |
+| `/stats` | Price, hashrate, registry, chain |
 | `/api/*` | JSON API (HTML when opened in a browser) |
 
 Language: `?lang=en` / `?lang=de`, or `Accept-Language`. Theme toggle is stored locally.
@@ -90,7 +90,7 @@ Scripts and `curl` get `application/json`. A browser tab gets an HTML wrapper so
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/stats` | Totals, namespaces, chain tip |
+| `GET /api/stats` | Totals, namespaces, chain, market, hashrate |
 | `GET /api/search?q=` | Name autocomplete (max 30) |
 | `GET /api/names?limit=&start=&ns=` | Paginated registry |
 | `GET /api/name/:name` | Current `name_show` record |

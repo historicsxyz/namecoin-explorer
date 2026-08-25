@@ -104,6 +104,25 @@ describe('NameCache', () => {
     assert.equal(cache.isHistorySynced('d/x'), true);
     cache.close();
   });
+
+  it('ranks addresses by live names using tip-overlay expiry', () => {
+    const cache = new NameCache(':memory:');
+    cache.upsertNameRecord({ name: 'd/a', value: '{}', address: 'Nbig', height: 37000 }, 37000);
+    cache.upsertNameRecord({ name: 'd/b', value: '{}', address: 'Nbig', height: 37000 }, 37000);
+    cache.upsertNameRecord({ name: 'd/c', value: '{}', address: 'Nsmall', height: 37000 }, 37000);
+    cache.upsertNameRecord({ name: 'd/old', value: '{}', address: 'Nbig', height: 1 }, 1);
+    cache.upsertNameRecord({ name: 'd/blank', value: '{}', address: '', height: 37000 }, 37000);
+    cache.setTip(37001, 'x');
+    const top = cache.topAddresses(10);
+    assert.equal(top[0].address, 'Nbig');
+    assert.equal(Number(top[0].live), 2);
+    assert.equal(Number(top[0].expired), 1);
+    assert.equal(Number(top[0].total), 3);
+    assert.equal(top[1].address, 'Nsmall');
+    assert.equal(Number(top[1].live), 1);
+    assert.equal(top.some((r) => r.address === ''), false);
+    cache.close();
+  });
 });
 
 describe('inferUpdateKind', () => {

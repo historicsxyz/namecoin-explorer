@@ -1,28 +1,166 @@
 <div class="topbar"><h1><%- include('includes/_icon', {icon:'chart'}) %> <%= t('stats.title') %></h1></div>
 
 <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+<% const m = stats.market || {}; const ch = m.change24h; %>
 
-<div class="grid cols-4" style="margin-bottom:18px">
-  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n"><%= stats.totalNames!=null?nfmt(stats.totalNames):'—' %></div><div class="l"><%= t('stats.totalNames') %></div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= stats.liveNames!=null?nfmt(stats.liveNames):'—' %></div><div class="l"><%= t('stats.live') %></div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= stats.expiredNames!=null?nfmt(stats.expiredNames):'—' %></div><div class="l"><%= t('stats.expired') %></div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= stats.chain && stats.chain.blocks ? nfmt(stats.chain.blocks) : '—' %></div><div class="l"><%= t('stats.blockHeight') %></div></div>
+<div class="grid cols-4 stats-kpis">
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'activity'}) %>
+    <div class="n"><%= stats.priceLabel || '—' %></div>
+    <div class="l"><%= t('stats.price') %></div>
+    <% if (ch != null && Number.isFinite(Number(ch))) { %>
+      <div class="delta <%= Number(ch) >= 0 ? 'up' : 'down' %>"><%= (Number(ch) >= 0 ? '+' : '') + Number(ch).toFixed(2) %>%</div>
+    <% } else if (m.disabled) { %>
+      <div class="stat-note"><%= t('stats.marketOff') %></div>
+    <% } else if (m.error && !m.price) { %>
+      <div class="stat-note"><%= t('stats.marketUnavailable') %></div>
+    <% } %>
+    <% if (stats.priceSpark && stats.priceSpark.svg) { %>
+      <div class="chart-spark"><%- stats.priceSpark.svg %></div>
+    <% } %>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'hash'}) %>
+    <div class="n"><%= stats.hashrateLabel || '—' %></div>
+    <div class="l"><%= t('stats.hashrate') %></div>
+    <div class="stat-note"><%= t('stats.hashrateNote') %></div>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'layers'}) %>
+    <div class="n"><%= stats.difficultyLabel || '—' %></div>
+    <div class="l"><%= t('stats.difficulty') %></div>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'blocks'}) %>
+    <div class="n"><%= stats.chain && stats.chain.blocks != null ? nfmt(stats.chain.blocks) : '—' %></div>
+    <div class="l"><%= t('stats.blockHeight') %></div>
+    <% if (stats.lastBlockTime) { %>
+      <div class="stat-note"><%= t('stats.lastBlock') %> <%= timeAgo(stats.lastBlockTime) %></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid cols-4 stats-kpis">
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'tag'}) %>
+    <div class="n"><%= stats.totalNames != null ? nfmt(stats.totalNames) : '—' %></div>
+    <div class="l"><%= t('stats.totalNames') %></div>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'check'}) %>
+    <div class="n" style="color:var(--green)"><%= stats.liveNames != null ? nfmt(stats.liveNames) : '—' %></div>
+    <div class="l"><%= t('stats.live') %></div>
+    <div class="stat-note"><%= stats.livePct != null ? stats.livePct.toFixed(1) + '%' : '' %></div>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'clock'}) %>
+    <div class="n" style="color:var(--red)"><%= stats.expiredNames != null ? nfmt(stats.expiredNames) : '—' %></div>
+    <div class="l"><%= t('stats.expired') %></div>
+  </div>
+  <div class="stat">
+    <%- include('includes/_icon', {icon:'database'}) %>
+    <div class="n"><%= stats.mcapLabel || '—' %></div>
+    <div class="l"><%= t('stats.marketCap') %></div>
+    <% if (stats.supplyLabel && stats.supplyLabel !== '—') { %>
+      <div class="stat-note"><%= t('stats.supply') %> <%= stats.supplyLabel %></div>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="panel chart-panel">
+    <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('stats.priceHistory') %></h2>
+    <div class="chart-meta">
+      <span><%= t('stats.volume24h') %> <strong><%= stats.volumeLabel || '—' %></strong></span>
+      <span><%= t('stats.ath') %> <strong><%= stats.athLabel || '—' %></strong></span>
+      <% if (stats.rankLabel && stats.rankLabel !== '—') { %><span><%= t('stats.rank') %> <strong><%= stats.rankLabel %></strong></span><% } %>
+    </div>
+    <% if (stats.priceChart && stats.priceChart.svg) { %>
+      <div class="chart-wrap"><%- stats.priceChart.svg %></div>
+      <% if (stats.priceAxis) { %><div class="chart-axis"><span><%= stats.priceAxis.span %></span><span><%= stats.priceAxis.range %></span></div><% } %>
+      <% if (stats.marketSource) { %><div class="chart-source"><%= t('stats.priceSource', { src: stats.marketSource }) %></div><% } %>
+    <% } else { %>
+      <p class="chart-empty"><%= t('stats.noPriceSeries') %></p>
+    <% } %>
+  </div>
+  <div class="panel chart-panel">
+    <h2><%- include('includes/_icon', {icon:'hash'}) %> <%= t('stats.hashrateHistory') %></h2>
+    <% if (stats.hrChart && stats.hrChart.svg) { %>
+      <div class="chart-wrap"><%- stats.hrChart.svg %></div>
+      <% if (stats.hrAxis) { %><div class="chart-axis"><span><%= stats.hrAxis.span %></span><span><%= stats.hrAxis.range %></span></div><% } %>
+    <% } else { %>
+      <p class="chart-empty"><%= t('stats.noHashrateSeries') %></p>
+    <% } %>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="panel chart-panel">
+    <h2><%- include('includes/_icon', {icon:'list'}) %> <%= t('stats.opsHistory') %></h2>
+    <p class="chart-lead"><%= t('stats.opsLead') %></p>
+    <% if (stats.opsChart && stats.opsChart.svg) { %>
+      <div class="chart-wrap"><%- stats.opsChart.svg %></div>
+      <% if (stats.opsAxis) { %><div class="chart-axis"><span><%= stats.opsAxis.span %></span><span><%= stats.opsAxis.range %></span></div><% } %>
+    <% } else { %>
+      <p class="chart-empty"><%= t('stats.noOpsSeries') %></p>
+    <% } %>
+  </div>
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'box'}) %> <%= t('stats.network') %></h2>
+    <table class="kv">
+      <tbody>
+        <tr><th><%= t('stats.chain') %></th><td class="mono"><%= (stats.chain && stats.chain.chain) || '—' %></td></tr>
+        <tr><th><%= t('stats.headers') %></th><td class="mono"><%= stats.chain && stats.chain.headers != null ? nfmt(stats.chain.headers) : '—' %></td></tr>
+        <tr><th><%= t('stats.avgBlock') %></th><td class="mono"><%= stats.intervalLabel || '—' %></td></tr>
+        <tr><th><%= t('stats.disk') %></th><td class="mono"><%= stats.diskLabel || '—' %></td></tr>
+        <tr><th><%= t('stats.mempoolTx') %></th><td class="mono"><%= stats.mempool && stats.mempool.size != null ? nfmt(stats.mempool.size) : '—' %></td></tr>
+        <tr><th><%= t('stats.mempoolBytes') %></th><td class="mono"><%= stats.mempool && stats.mempool.bytes != null ? nfmt(stats.mempool.bytes) : '—' %></td></tr>
+        <tr><th><%= t('stats.pruned') %></th><td><%= stats.chain && stats.chain.pruned ? t('stats.yes') : t('stats.no') %></td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="panel">
   <h2><%- include('includes/_icon', {icon:'layers'}) %> <%= t('stats.namespaces') %></h2>
   <table>
-    <thead><tr><th><%= t('stats.prefix') %></th><th><%= t('stats.total') %></th><th><%= t('stats.live') %></th><th><%= t('stats.expired') %></th><th><%= t('stats.livePct') %></th></tr></thead>
+    <thead><tr><th><%= t('stats.prefix') %></th><th><%= t('stats.share') %></th><th><%= t('stats.total') %></th><th><%= t('stats.live') %></th><th><%= t('stats.expired') %></th><th><%= t('stats.livePct') %></th></tr></thead>
     <tbody>
-      <% (stats.namespaces||[]).slice(0,25).forEach(r => { %>
+      <% (stats.namespaces || []).slice(0, 25).forEach(r => { const pct = stats.nsMax ? 100 * (r.total || 0) / stats.nsMax : 0; %>
       <tr>
         <td class="mono"><a href="/namespace/<%= r.namespace.replace(/\/$/,'') %>"><%= r.namespace %></a></td>
+        <td class="ns-share"><span class="ns-bar" aria-hidden="true"><span style="width:<%= pct.toFixed(1) %>%"></span></span></td>
         <td><%= nfmt(r.total) %></td>
-        <td style="color:var(--green)"><%= nfmt(r.live||0) %></td>
-        <td style="color:var(--red)"><%= nfmt(r.expired||0) %></td>
-        <td class="mono"><%= r.total? (100*(r.live||0)/r.total).toFixed(1) : '0' %>%</td>
+        <td style="color:var(--green)"><%= nfmt(r.live || 0) %></td>
+        <td style="color:var(--red)"><%= nfmt(r.expired || 0) %></td>
+        <td class="mono"><%= r.total ? (100 * (r.live || 0) / r.total).toFixed(1) : '0' %>%</td>
       </tr>
       <% }) %>
     </tbody>
   </table>
+</div>
+
+<div class="panel">
+  <h2><%- include('includes/_icon', {icon:'key'}) %> <%= t('stats.holders') %></h2>
+  <% if (!(stats.topAddresses || []).length) { %>
+    <p class="chart-empty"><%= t('stats.noHolders') %></p>
+  <% } else { %>
+  <div class="table-wrap">
+  <table class="holders-table">
+    <thead><tr><th>#</th><th><%= t('stats.address') %></th><th><%= t('stats.share') %></th><th><%= t('stats.live') %></th><th><%= t('stats.total') %></th><th><%= t('stats.expired') %></th></tr></thead>
+    <tbody>
+      <% (stats.topAddresses || []).forEach((r, i) => { const pct = stats.addrMax ? 100 * (r.live || 0) / stats.addrMax : 0; %>
+      <tr>
+        <td class="mono"><%= i + 1 %></td>
+        <td class="mono holders-addr" title="<%= r.address %>"><%= r.address %></td>
+        <td class="ns-share"><span class="ns-bar" aria-hidden="true"><span style="width:<%= pct.toFixed(1) %>%"></span></span></td>
+        <td style="color:var(--green)"><%= nfmt(Number(r.live) || 0) %></td>
+        <td><%= nfmt(Number(r.total) || 0) %></td>
+        <td style="color:var(--red)"><%= nfmt(Number(r.expired) || 0) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
 </div>

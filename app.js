@@ -23,6 +23,7 @@ const {
   OP_LABELS,
 } = require('./lib/names');
 const { expiryStatus, SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
+const { headerTickers } = require('./lib/statsdata');
 const registerRoutes = require('./lib/routes');
 
 function loadEnvFile(file) {
@@ -155,6 +156,8 @@ app.use((req, res, next) => {
   try { res.locals.registryCount = cache.count(); }
   catch (e) { res.locals.registryCount = 0; }
   res.locals.lastSync = ingest.lastResult || null;
+  try { res.locals.tickers = headerTickers(cache); }
+  catch (e) { res.locals.tickers = {}; }
   next();
 });
 

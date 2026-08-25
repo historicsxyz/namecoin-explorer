@@ -1,0 +1,20 @@
+<% const tk = typeof tickers !== 'undefined' && tickers ? tickers : {}; const ch = tk.change24h; %>
+<div class="tickers">
+  <a class="ticker" href="/stats" aria-label="<%= t('ticker.priceAria') %>">
+    <div class="ticker-meta">
+      <span class="ticker-k"><%= t('ticker.price') %></span>
+      <span class="ticker-v"><%= tk.priceLabel || '—' %></span>
+      <% if (ch != null && Number.isFinite(Number(ch))) { %>
+        <span class="ticker-d <%= Number(ch) >= 0 ? 'up' : 'down' %>"><%= (Number(ch) >= 0 ? '+' : '') + Number(ch).toFixed(2) %>%</span>
+      <% } %>
+    </div>
+    <% if (tk.priceSpark && tk.priceSpark.svg) { %><div class="ticker-spark"><%- tk.priceSpark.svg %></div><% } %>
+  </a>
+  <a class="ticker" href="/stats" aria-label="<%= t('ticker.hashrateAria') %>">
+    <div class="ticker-meta">
+      <span class="ticker-k"><%= t('ticker.hashrate') %></span>
+      <span class="ticker-v"><%= tk.hashrateLabel || '—' %></span>
+    </div>
+    <% if (tk.hrSpark && tk.hrSpark.svg) { %><div class="ticker-spark"><%- tk.hrSpark.svg %></div><% } %>
+  </a>
+</div>
