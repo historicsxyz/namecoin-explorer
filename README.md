@@ -103,23 +103,34 @@ Names contain `/` — encode them (`d%2Fbitcoin`).
 
 Scripts and `curl` get `application/json`. A browser tab gets an HTML wrapper so the payload is readable. Force raw JSON with `?format=json` or `Accept: application/json`.
 
+List and lookup endpoints that have an index use SQLite. Live-node fields add `"source": "rpc"` or `"source": "index"` so you can tell a cache fallback from Core.
+
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/stats` | Totals, namespaces, chain, market, hashrate |
 | `GET /api/search?q=` | Lookup: name, height, txid, or address |
 | `GET /api/names?limit=&start=&ns=` | Paginated registry |
-| `GET /api/name/:name` | Current `name_show` record (live RPC) |
-| `GET /api/name/:name/history` | `name_history` (live RPC) |
-| `GET /api/name/:name/pending` | Mempool ops for that name (live RPC) |
+| `GET /api/namespaces` | Namespace totals |
+| `GET /api/namespace/:ns` | Names in one prefix |
+| `GET /api/name/:name` | Current record (`name_show`, or the index if RPC fails) |
+| `GET /api/name/:name/history` | `{ items, source }` — `name_history`, or typed `name_ops` if RPC fails |
+| `GET /api/name/:name/pending` | Mempool ops (RPC only) |
+| `GET /api/operations` | Confirmed name ops (`?op=`, `?page=`, `?limit=`) |
+| `GET /api/operations/pending` | Mempool name ops (RPC only) |
+| `GET /api/blocks` | Header page with name-op counts |
+| `GET /api/block/:hash` | One block (height or hash). Index header + name ops if RPC fails |
+| `GET /api/tx` | Recent transactions (RPC per block, index fill / fallback) |
+| `GET /api/tx/:txid` | Tx summary + name ops (index if RPC fails) |
+| `GET /api/addresses` | Name-holding addresses |
+| `GET /api/address/:addr` | Names and ops at an address |
 | `GET /api/health` | Liveness, tip, catch-up (`/health` is the same) |
 
 ```bash
 curl -s http://127.0.0.1:3100/api/health
 curl -s http://127.0.0.1:3100/api/name/d%2Fbitcoin
 curl -s "http://127.0.0.1:3100/api/search?q=bit"
+curl -s http://127.0.0.1:3100/api/operations
 ```
-
-The JSON name endpoints talk to the node. HTML pages can fall back to the index when RPC fails; `curl` still sees the RPC error.
 
 ## How it is built
 
@@ -144,7 +155,7 @@ Browser ──HTTP──► Explorer (Express, 127.0.0.1:3100)
 
 - **Fail loud.** When RPC is up, errors are thrown. The client never invents “available / not found”.
 - **One writer.** Ingest is the only process that writes `cache.db`. HTTP only reads.
-- **Node when reachable, index for lists and fallbacks.** `name_show` is live; `/names`, search, and the HTML fallbacks are SQLite.
+- **Node when reachable, index for lists and fallbacks.** `name_show` is live; `/names`, search, HTML, and matching JSON endpoints fall back to SQLite and set `"source": "index"`.
 
 Deep dive: [ARCHITECTURE.md](ARCHITECTURE.md).
 

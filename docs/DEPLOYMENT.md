@@ -7,7 +7,7 @@ How to run Namecoin Explorer in production behind HTTPS. This is the stack used 
 | Piece | Role |
 |-------|------|
 | **namecoind** (Namecoin Core 28) | Full node. RPC **only** on `127.0.0.1:8336` |
-| **this app** (Node ≥ 20) | Express on `127.0.0.1:3100` |
+| **this app** (Node ≥ 20, `engines.node`) | Express on `127.0.0.1:3100` |
 | **Caddy** | Reverse proxy + Let's Encrypt |
 
 One ingest+HTTP process on the same machine as the node. SQLite WAL already serves concurrent HTTP readers inside that process.
@@ -69,6 +69,13 @@ User=namecoin
 WantedBy=multi-user.target
 ```
 
+`better-sqlite3` is a native addon. Install and rebuild it with **the same Node binary** as `ExecStart`. Mixing versions (for example `npm ci` under Node 26, then `ExecStart=/opt/node20/bin/node`) fails with a `NODE_MODULE_VERSION` mismatch (147 vs 115). `package.json` `engines.node` is `>=20 <27` (the range `better-sqlite3` 12.x compiles on). `node:sqlite` is not a fallback on Node 20 (it needs ≥ 22.5).
+
+```bash
+PATH=/opt/node20/bin:$PATH npm ci --omit=dev
+PATH=/opt/node20/bin:$PATH npm rebuild better-sqlite3
+```
+
 ## 3. Caddy
 
 `/etc/caddy/Caddyfile`:
@@ -119,6 +126,6 @@ Default first run: `tip − 36,000`. `NMC_INGEST_FROM=0` or `genesis` starts at 
 
 - First start follows ~36,000 blocks (unless genesis rewind) and bootstraps with `name_scan` pages of 500. `/operations` fills as blocks are ingested.
 - `txindex=1` and `namehistory=1` are required for lazy per-name history, not for the block-follow indexer itself.
-- If `namecoind` is down, HTML lists and search keep serving from SQLite. `/name` and `/tx/:txid` show indexed name data and say so. `/block/:hash`, mempool, and `/api/name/*` still need RPC. `/health` is the process, not the node.
+- If `namecoind` is down, HTML lists and search keep serving from SQLite. `/name` and `/tx/:txid` show indexed name data and say so. JSON matches: `/api/name`, `/api/tx/:txid`, and `/api/block/:hash` set `"source":"index"` when they fall back. Mempool endpoints (`/operations/pending`, `/api/name/:name/pending`) still need RPC. `/health` is the process, not the node.
 - Back up `data/cache.db` if you want; it will re-ingest if lost. Point `NMC_CACHE_DB` at a fast disk for a large index.
 - Local development against this VPS: SSH tunnel only (`npm run dev:vps`). That is not a production path.

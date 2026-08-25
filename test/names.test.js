@@ -79,3 +79,20 @@ describe('showFromCache', () => {
     assert.equal(showFromCache({ name: 'd/x', expired: 1 }).txid, null);
   });
 });
+
+describe('loadNameRecord', () => {
+  it('falls back to the index when name_show fails', async () => {
+    const { loadNameRecord } = require('../lib/names');
+    const { NameCache } = require('../lib/cache');
+    const cache = new NameCache(':memory:');
+    cache.upsertNameRecord({ name: 'd/our', value: '{}', address: 'N1', height: 10 }, 10);
+    const rpc = { nameShow: async () => { throw new Error('ECONNREFUSED'); } };
+    const hit = await loadNameRecord(rpc, cache, 'd/our');
+    assert.equal(hit.fromCache, true);
+    assert.equal(hit.show.name, 'd/our');
+    const miss = await loadNameRecord(rpc, cache, 'd/missing');
+    assert.equal(miss.show, null);
+    assert.match(miss.error, /ECONNREFUSED/);
+    cache.close();
+  });
+});

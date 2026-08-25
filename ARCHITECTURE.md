@@ -42,9 +42,12 @@ Catalogs in `lib/i18n.js` load at `require` time. Restart the process after edit
 | `/tx` | `getblock` per recent header | Fill failed heights from indexed name-op txids; if every call fails, a flat recent-txid list |
 | `/block/:hash` | `getblock` (height or hash) | Error (no HTML fallback) |
 | `/operations/pending` | `name_pending` + `getmempoolinfo` | Error banner; do not claim an empty mempool |
-| `/api/name/*` | Live RPC | JSON error (no index substitute) |
+| `/api/name/:name` | `name_show` | Indexed name row; `"source":"index"` |
+| `/api/name/:name/history` | `name_history` | Typed `name_ops`; `"source":"index"` |
+| `/api/tx/:txid`, `/api/block/:hash` | RPC object | Index name ops / header; `"source":"index"` |
+| `/api/name/:name/pending`, `/api/operations/pending` | Live RPC | JSON error (mempool is not in SQLite) |
 
-Do not invent “available / not found”. Cache HTML is a degraded view of data already ingested, not a second consensus.
+Do not invent “available / not found”. Index HTML and JSON are a degraded view of data already ingested, not a second consensus.
 
 `NAME_NEW` is a real consensus op. `/` and `/blocks` count it. `/operations` hides it unless `?op=NAME_NEW`. Block filters `with` / `busy` / `none` still ignore commitment-only blocks so “has name ops” means revealed names.
 
@@ -65,7 +68,7 @@ SQLite WAL. One writer (ingest), HTTP only reads.
 
 Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `meta`. Never load the full registry into a JS array.
 
-If `better-sqlite3` has no native build (e.g. some Windows/Node combos), fall back to `node:sqlite`.
+If `better-sqlite3` has no native build (e.g. some Windows/Node combos), fall back to `node:sqlite` (Node ≥ 22.5). On Node 20 a failed native load is fatal — rebuild with the same Node binary the process uses.
 
 Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Autocomplete prefers prefix `MATCH` (`term*`), then `LIKE`. Cap 30. No Redis/Elasticsearch.
 

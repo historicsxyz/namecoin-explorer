@@ -1,6 +1,6 @@
 {
   "name": "namecoin-explorer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Self-hosted Namecoin name browser and operations explorer. SQLite index, JSON API, backed by your own namecoind.",
   "main": "app.js",
   "scripts": {
@@ -28,10 +28,10 @@
     "url": "https://github.com/historicsxyz/namecoin-explorer.git"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <27"
   },
   "dependencies": {
-    "better-sqlite3": "^11.10.0",
+    "better-sqlite3": "^12.11.1",
     "compression": "^1.7.4",
     "ejs": "^3.1.9",
     "express": "^4.18.2",

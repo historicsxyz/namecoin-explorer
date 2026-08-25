@@ -18,7 +18,7 @@ const { attachSeo, registerSeoRoutes } = require('./lib/seo');
 const {
   renderValue,
   timelineFromOps,
-  showFromCache,
+  loadNameRecord,
 } = require('./lib/names');
 const { SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
 const { headerTickers } = require('./lib/statsdata');
@@ -218,18 +218,10 @@ app.get('/name/:name', async (req, res) => {
   const rawName = req.params.name;
   const cached = (() => { try { return cache.get(rawName); } catch { return null; } })();
 
-  let show = null, pending = [], fromCache = false;
-  try { show = await rpc.nameShow(rawName); }
-  catch (e) {
-    if (cached) {
-      let last = null;
-      try { last = cache.lastOpForName(rawName); } catch { /* empty index */ }
-      show = showFromCache(cached, last);
-      fromCache = true;
-    } else {
-      res.locals.nameError = e.message;
-    }
-  }
+  const loaded = await loadNameRecord(rpc, cache, rawName);
+  const show = loaded.show;
+  const fromCache = loaded.fromCache;
+  if (!show && loaded.error) res.locals.nameError = loaded.error;
 
   let ops = [];
   try { ops = cache.opsForName(rawName); } catch { ops = []; }
@@ -241,6 +233,7 @@ app.get('/name/:name', async (req, res) => {
   }
   const timeline = timelineFromOps(ops || []);
 
+  let pending = [];
   try { pending = await rpc.namePending(rawName); }
   catch (e) { /* mempool optional */ }
 

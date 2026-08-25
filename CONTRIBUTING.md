@@ -86,6 +86,7 @@ Against a running node:
 ```bash
 curl -s http://127.0.0.1:3100/api/health
 curl -s http://127.0.0.1:3100/api/name/d%2Fbitcoin
+curl -s http://127.0.0.1:3100/api/operations
 ```
 
 UI changes: exercise the route in a browser (or the editor preview), including the other pages that share the same state.

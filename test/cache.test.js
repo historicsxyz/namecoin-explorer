@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { NameCache } = require('../lib/cache');
+const { NameCache, sqliteBackendError } = require('../lib/cache');
 const { inferUpdateKind } = require('../lib/names');
 const { HEX_OPTS, SHOW_OPTS } = require('../lib/rpc');
 
@@ -10,6 +10,19 @@ describe('rpc encodings', () => {
   it('sends Core nameEncoding / valueEncoding hex options', () => {
     assert.equal(JSON.stringify(HEX_OPTS), '{"nameEncoding":"hex","valueEncoding":"hex"}');
     assert.equal(SHOW_OPTS.allowExpired, true);
+  });
+});
+
+describe('sqliteBackendError', () => {
+  it('names both backends instead of leaking ERR_UNKNOWN_BUILTIN_MODULE', () => {
+    const err = sqliteBackendError(
+      new Error('NODE_MODULE_VERSION 147 vs 115'),
+      Object.assign(new Error('No such built-in module: node:sqlite'), { code: 'ERR_UNKNOWN_BUILTIN_MODULE' }),
+    );
+    assert.match(err.message, /better-sqlite3 failed to load/);
+    assert.match(err.message, /node:sqlite needs Node ≥ 22\.5/);
+    assert.match(err.message, /npm rebuild better-sqlite3/);
+    assert.equal(err.cause.message, 'NODE_MODULE_VERSION 147 vs 115');
   });
 });
 
