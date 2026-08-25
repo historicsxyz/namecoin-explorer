@@ -9,20 +9,17 @@ const compression = require('compression');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
-const { NamecoinRPC, hexToName } = require('./lib/rpc');
+const { NamecoinRPC } = require('./lib/rpc');
 const { NameCache } = require('./lib/cache');
 const { IngestService, ingestOptionsFromEnv } = require('./lib/ingest');
 const { t, pickLang } = require('./lib/i18n');
 const { sendApiJson } = require('./lib/api-json');
 const { attachSeo, registerSeoRoutes } = require('./lib/seo');
 const {
-  parseNamespace,
-  classifyValue,
   renderValue,
   timelineFromOps,
-  OP_LABELS,
 } = require('./lib/names');
-const { expiryStatus, SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
+const { SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
 const { headerTickers } = require('./lib/statsdata');
 const registerRoutes = require('./lib/routes');
 
@@ -74,20 +71,9 @@ const logStream = fs.createWriteStream(path.join(__dirname, 'explorer.log'), { f
 app.use(morgan('combined', { stream: logStream }));
 
 const APP_VERSION = require('./package.json').version;
-const nsInfo = (n) => parseNamespace(typeof n === 'string' ? n : '');
 app.locals.appVersion = APP_VERSION;
-app.locals.nsInfo = nsInfo;
 app.locals.renderValue = renderValue;
-app.locals.classifyValue = classifyValue;
 app.locals.nfmt = (x) => (typeof x === 'number' ? x.toLocaleString() : x);
-app.locals.timeAgo = (ts) => {
-  if (!ts) return '';
-  const s = Date.now() / 1000 - ts;
-  if (s < 60) return Math.floor(s) + 's ago';
-  if (s < 3600) return Math.floor(s / 60) + 'm ago';
-  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
-  return Math.floor(s / 86400) + 'd ago';
-};
 app.locals.fmtDuration = (sec) => {
   if (sec == null || !Number.isFinite(Number(sec))) return '—';
   const s = Math.abs(Math.floor(Number(sec)));
@@ -124,10 +110,6 @@ app.locals.relDur = (ts) => {
   else label = (abs / (86400 * 365)).toFixed(1).replace(/\.0$/, '') + 'y';
   return { future, t: label };
 };
-app.locals.OP_LABELS = OP_LABELS;
-app.locals.hexToName = hexToName;
-app.locals.SEMI_EXPIRE_WINDOW = SEMI_EXPIRE_WINDOW;
-app.locals.expiryStatus = expiryStatus;
 app.locals.expiryKind = (r) => {
   if (!r) return 'unknown';
   if (r.expired || (r.expires_in != null && r.expires_in <= 0)) return 'expired';
@@ -161,30 +143,32 @@ app.use((req, res, next) => {
   next();
 });
 
+function homeBlockSummary(cache, hdr) {
+  if (!hdr) return null;
+  const prevHdr = hdr.height > 0 ? cache.headerAt(hdr.height - 1) : null;
+  let nameOpCount = 0;
+  try { nameOpCount = cache.opsAtHeight(hdr.height).length; } catch { /* empty index */ }
+  return {
+    hash: hdr.hash,
+    height: hdr.height,
+    time: hdr.time,
+    nTx: hdr.ntx != null ? hdr.ntx : null,
+    prev: hdr.prev || (prevHdr && prevHdr.hash) || '',
+    prevHeight: prevHdr ? prevHdr.height : (hdr.height > 0 ? hdr.height - 1 : null),
+    intervalSec: prevHdr && prevHdr.time != null && hdr.time != null
+      ? hdr.time - prevHdr.time
+      : null,
+    nameOpCount,
+  };
+}
+
 app.get('/', async (req, res) => {
   res.locals.page = 'home';
   const tip = cache.getTip();
-  let block = null;
-  if (tip) {
-    const hdr = cache.headerAt(tip.height);
-    const prevHdr = tip.height > 0 ? cache.headerAt(tip.height - 1) : null;
-    if (hdr) {
-      let nameOpCount = 0;
-      try { nameOpCount = cache.opsAtHeight(hdr.height).length; } catch { /* empty index */ }
-      block = {
-        hash: hdr.hash,
-        height: hdr.height,
-        time: hdr.time,
-        nTx: hdr.ntx != null ? hdr.ntx : null,
-        prev: hdr.prev || (prevHdr && prevHdr.hash) || '',
-        prevHeight: prevHdr ? prevHdr.height : (hdr.height > 0 ? hdr.height - 1 : null),
-        intervalSec: prevHdr && prevHdr.time != null && hdr.time != null
-          ? hdr.time - prevHdr.time
-          : null,
-        nameOpCount,
-      };
-    }
-  }
+  const blocks = tip
+    ? cache.latestHeaders(4).map((hdr) => homeBlockSummary(cache, hdr)).filter(Boolean)
+    : [];
+  const block = blocks[0] || null;
   let recent = [], expiring = [];
   let latest = tip ? tip.height : 0;
   let namespaces = [];
@@ -193,7 +177,7 @@ app.get('/', async (req, res) => {
     expiring = cache.expiringSoon(8);
     namespaces = cache.countByNamespace();
   } catch (e) { /* empty index */ }
-  res.render('home', { block, recent, expiring, latest, namespaces });
+  res.render('home', { block, blocks, recent, expiring, latest, namespaces });
 });
 
 app.get('/og', (req, res) => {
@@ -374,11 +358,25 @@ if (require.main === module) {
     process.exit(1);
   }
 
+  let shuttingDown = false;
   const shutdown = () => {
-    ingest.stop();
+    if (shuttingDown) return;
+    shuttingDown = true;
     const t = setTimeout(() => { cache.close(); process.exit(1); }, 8000);
     t.unref();
-    server.close(() => { clearTimeout(t); cache.close(); process.exit(0); });
+    Promise.all([
+      Promise.resolve(ingest.stop()),
+      new Promise((resolve) => server.close(resolve)),
+    ]).then(() => {
+      clearTimeout(t);
+      cache.close();
+      process.exit(0);
+    }).catch((e) => {
+      console.error('[shutdown]', e && e.message ? e.message : e);
+      clearTimeout(t);
+      try { cache.close(); } catch { /* already closed */ }
+      process.exit(1);
+    });
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);

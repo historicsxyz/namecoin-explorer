@@ -123,6 +123,102 @@ describe('NameCache', () => {
     assert.equal(top.some((r) => r.address === ''), false);
     cache.close();
   });
+
+  it('pages headers and counts name ops per height', () => {
+    const cache = new NameCache(':memory:');
+    for (let h = 1; h <= 25; h++) {
+      cache.insertBlock({
+        header: { height: h, hash: 'h' + h, time: h, prev: 'p' + h, ntx: 1, merkle: 'm' },
+        ops: h % 5 === 0 ? [{
+          txid: 'tx' + h, vout: 0, op: 'NAME_UPDATE', name: 'd/x',
+          nameHex: Buffer.from('d/x').toString('hex'), value: '{}', address: 'A',
+        }, {
+          txid: 'new' + h, vout: 0, op: 'NAME_NEW', name: null, nameHex: null, value: 'aa', address: 'A',
+        }] : [],
+        tipHeight: h,
+      });
+    }
+    assert.equal(cache.headerCount(), 25);
+    const page1 = cache.latestHeaders(20);
+    assert.equal(page1.length, 20);
+    assert.equal(page1[0].height, 25);
+    assert.equal(page1[19].height, 6);
+    const page2 = cache.latestHeaders(20, 20);
+    assert.equal(page2.length, 5);
+    assert.equal(page2[0].height, 5);
+    const counts = cache.opCountsByHeight(page1.map((b) => b.height));
+    assert.equal(counts.get(25), 1);
+    assert.equal(counts.get(20), 1);
+    assert.equal(counts.has(24), false);
+    assert.equal(cache.opCountsByHeight([25], { hideCommitments: false }).get(25), 2);
+
+    const from10 = cache.pageHeaders({ maxHeight: 10, limit: 5 });
+    assert.equal(from10.map((b) => b.height).join(','), '10,9,8,7,6');
+    assert.equal(cache.countHeaders({ maxHeight: 10 }), 10);
+    assert.equal(cache.headerByHash('h25').height, 25);
+
+    const withOps = cache.pageHeaders({ ops: 'with', limit: 20 });
+    assert.equal(withOps.map((b) => b.height).join(','), '25,20,15,10,5');
+    assert.equal(cache.countHeaders({ ops: 'none' }), 20);
+    assert.equal(cache.pageHeaders({ ops: 'NAME_UPDATE', limit: 3 })[0].height, 25);
+    assert.equal(cache.pageHeaders({ hashPrefix: 'h2', limit: 20 }).map((b) => b.height).join(','), '25,24,23,22,21,20,2');
+    cache.close();
+  });
+
+  it('filters headers by busy name-op counts', () => {
+    const cache = new NameCache(':memory:');
+    for (let h = 1; h <= 3; h++) {
+      const ops = h === 3
+        ? Array.from({ length: 10 }, (_, i) => ({
+          txid: 'u' + i, vout: 0, op: 'NAME_UPDATE', name: 'd/x',
+          nameHex: Buffer.from('d/x').toString('hex'), value: '{}', address: 'A',
+        }))
+        : [{
+          txid: 'one' + h, vout: 0, op: 'NAME_UPDATE', name: 'd/x',
+          nameHex: Buffer.from('d/x').toString('hex'), value: '{}', address: 'A',
+        }];
+      cache.insertBlock({
+        header: { height: h, hash: 'h' + h, time: h, prev: 'p', ntx: ops.length, merkle: 'm' },
+        ops,
+        tipHeight: h,
+      });
+    }
+    assert.equal(cache.countHeaders({ ops: 'busy' }), 1);
+    assert.equal(cache.pageHeaders({ ops: 'busy', limit: 5 })[0].height, 3);
+    assert.equal(cache.countHeaders({ maxHeight: 20, ops: 'with' }), 3);
+    cache.close();
+  });
+
+  it('pages recent ops without loading the full feed', () => {
+    const cache = new NameCache(':memory:');
+    for (let h = 1; h <= 6; h++) {
+      cache.insertBlock({
+        header: { height: h, hash: 'h' + h, time: h, prev: 'p', ntx: 1, merkle: 'm' },
+        ops: [{
+          txid: 'u' + h, vout: 0, op: 'NAME_UPDATE', name: 'd/a',
+          nameHex: Buffer.from('d/a').toString('hex'), value: '{}', address: 'A',
+        }, {
+          txid: 'n' + h, vout: 0, op: 'NAME_NEW', name: null, nameHex: null, value: 'aa', address: 'A',
+        }],
+        tipHeight: h,
+      });
+    }
+    assert.equal(cache.countRecentOps(), 6);
+    assert.equal(cache.countRecentOps({ hideCommitments: false }), 12);
+    assert.equal(cache.countRecentOps({ op: 'NAME_UPDATE' }), 6);
+    const page1 = cache.recentOps({ limit: 4 });
+    assert.equal(page1.length, 4);
+    assert.equal(page1[0].height, 6);
+    assert.equal(page1[0].op, 'NAME_UPDATE');
+    const page2 = cache.recentOps({ limit: 4, offset: 4 });
+    assert.equal(page2.length, 2);
+    assert.equal(page2[0].height, 2);
+    assert.equal(page2[1].height, 1);
+    const news = cache.recentOps({ op: 'NAME_NEW', limit: 2, offset: 2 });
+    assert.equal(news.length, 2);
+    assert.equal(news[0].op, 'NAME_NEW');
+    cache.close();
+  });
 });
 
 describe('inferUpdateKind', () => {

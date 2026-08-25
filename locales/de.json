@@ -34,7 +34,6 @@
     "hashrateAria": "Netzwerk-Hashrate — Statistik öffnen"
   },
   "footer": {
-    "by": "von",
     "sponsored": "Gesponsert von",
     "github": "GitHub",
     "license": "MIT-Lizenz",
@@ -44,6 +43,11 @@
     "menu": "Menü",
     "theme": "Darstellung umschalten",
     "skip": "Zum Inhalt springen"
+  },
+  "pager": {
+    "prev": "← Zurück",
+    "next": "Weiter →",
+    "page": "Seite {n} von {pages}"
   },
   "error": {
     "title": "Seite nicht gefunden",
@@ -85,16 +89,16 @@
     "totalNames": "Namen gesamt",
     "liveNames": "Aktive Namen",
     "expired": "Abgelaufen",
-    "latestBlock": "Letzter Block",
-    "viewBlock": "Block ansehen",
+    "latestBlock": "Letzte Blöcke",
+    "viewAll": "Alle ansehen",
+    "txAbbr": "Tx",
+    "opsAbbr": "Ops",
+    "prevAbbr": "vorh.",
     "height": "Höhe",
-    "hash": "Hash",
-    "time": "Zeit",
     "transactions": "Transaktionen",
     "nameOps": "Name-Ops",
     "sincePrev": "Intervall",
     "previous": "Vorheriger",
-    "merkle": "Merkle",
     "awaitingBlock": "Warte auf Blockdaten…",
     "namespaces": "Namensräume",
     "prefix": "Präfix",
@@ -126,8 +130,6 @@
     "shown": "{n} angezeigt"
   },
   "name": {
-    "record": "Namenseintrag",
-    "backRegistry": "← Register",
     "expiredBanner": "Dieser Name ist ABGELAUFEN und gehört niemandem mehr. Jeder kann ihn neu registrieren.",
     "currentRecord": "Aktueller Eintrag",
     "name": "Name",
@@ -184,7 +186,6 @@
     "empty": "Der Mempool ist leer — es gibt gerade keine unbestätigten Transaktionen."
   },
   "ns": {
-    "namespace": "Namensraum",
     "totalNames": "{ns}/-Namen gesamt",
     "live": "Aktiv",
     "expired": "Abgelaufen",
@@ -217,11 +218,17 @@
     "lastBlock": "Letzter Block",
     "avgBlock": "Ø Blockzeit",
     "priceHistory": "NMC-Preis",
-    "priceSource": "Täglich USD · {src} · kein API-Schlüssel",
+    "priceRange": "Preiszeitraum",
+    "range7d": "7d",
+    "range1m": "1m",
+    "range3m": "3m",
+    "range1y": "1y",
     "volume24h": "24h-Volumen",
     "ath": "ATH",
     "hashrateHistory": "Globale Hashrate",
+    "hashrateRange": "Hashrate-Zeitraum",
     "opsHistory": "Namenoperationen",
+    "opsRange": "Ops-Zeitraum",
     "opsLead": "Bestätigte Namen-Ops pro Tag im indexierten Fenster (Commitments ausgeblendet).",
     "network": "Kette",
     "chain": "Netzwerk",
@@ -248,7 +255,22 @@
     "hash": "Hash",
     "time": "Zeit",
     "txs": "Txs",
-    "nameOps": "Namen-Ops"
+    "nameOps": "Namen-Ops",
+    "empty": "Noch keine Blöcke im Index.",
+    "noMatch": "Keine Blöcke passen zu diesen Filtern.",
+    "searchPlaceholder": "Höhe oder Hash…",
+    "filter": "Filtern",
+    "clear": "Zurücksetzen",
+    "allOps": "Alle Blöcke",
+    "withOps": "Mit Namen-Ops",
+    "busyOps": "10+ Namen-Ops",
+    "noOps": "Ohne Namen-Ops",
+    "opsRegisters": "NAME_FIRSTUPDATE / Registrierung",
+    "opsUpdates": "NAME_UPDATE",
+    "opsCommitments": "NAME_NEW-Commitments",
+    "chainTip": "Chain-Spitze #{n}",
+    "fromHeight": "ab #{n}",
+    "matching": "{n} Treffer"
   },
   "block": {
     "back": "← Blöcke",
@@ -281,7 +303,6 @@
   },
   "tx": {
     "title": "Transaktion",
-    "crumb": "Namecoin-Transaktion",
     "summary": "Zusammenfassung",
     "txid": "Txid",
     "block": "Block",

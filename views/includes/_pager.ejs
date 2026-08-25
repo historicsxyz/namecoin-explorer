@@ -1,0 +1,15 @@
+<% if (typeof pager !== 'undefined' && pager) { %>
+<div class="pager">
+  <% if (pager.prevHref) { %>
+    <a class="btn btn-ghost" rel="prev" href="<%= pager.prevHref %>"><%= t('pager.prev') %></a>
+  <% } else { %>
+    <span class="btn btn-ghost is-disabled" aria-disabled="true"><%= t('pager.prev') %></span>
+  <% } %>
+  <span class="pager-meta muted"><%= t('pager.page', { n: pager.page, pages: pager.pages }) %></span>
+  <% if (pager.nextHref) { %>
+    <a class="btn" rel="next" href="<%= pager.nextHref %>"><%= t('pager.next') %></a>
+  <% } else { %>
+    <span class="btn is-disabled" aria-disabled="true"><%= t('pager.next') %></span>
+  <% } %>
+</div>
+<% } %>

@@ -1,0 +1,5 @@
+<nav class="chart-range" aria-label="<%= aria %>">
+  <% ['1y','3m','1m','7d'].forEach(function (r) { %>
+    <a href="<%= statsHref(param, r) %>" class="<%= current === r ? 'on' : '' %>"<% if (current === r) { %> aria-current="true"<% } %>><%= t('stats.range' + r) %></a>
+  <% }) %>
+</nav>

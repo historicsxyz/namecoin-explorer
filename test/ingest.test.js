@@ -97,6 +97,22 @@ describe('IngestService.backfillName', () => {
   });
 });
 
+describe('IngestService.stop', () => {
+  it('wakes poll sleep and waits for the loop to exit', async () => {
+    const cache = new NameCache(':memory:');
+    const rpc = {
+      call: async () => { throw new Error('rpc down'); },
+    };
+    const ingest = new IngestService(rpc, cache);
+    ingest.start();
+    await new Promise((r) => setTimeout(r, 50));
+    const t0 = Date.now();
+    await ingest.stop();
+    assert.ok(Date.now() - t0 < 2000);
+    cache.close();
+  });
+});
+
 describe('i18n', () => {
   it('falls back to English and interpolates', () => {
     assert.equal(t('en', 'nav.home'), 'Explorer');

@@ -34,7 +34,6 @@
     "hashrateAria": "Network hashrate — open statistics"
   },
   "footer": {
-    "by": "by",
     "sponsored": "Sponsored by",
     "github": "GitHub",
     "license": "MIT License",
@@ -44,6 +43,11 @@
     "menu": "Menu",
     "theme": "Toggle theme",
     "skip": "Skip to content"
+  },
+  "pager": {
+    "prev": "← Previous",
+    "next": "Next →",
+    "page": "Page {n} of {pages}"
   },
   "error": {
     "title": "Page not found",
@@ -85,16 +89,16 @@
     "totalNames": "Total names",
     "liveNames": "Live names",
     "expired": "Expired",
-    "latestBlock": "Latest Block",
-    "viewBlock": "View block",
+    "latestBlock": "Latest blocks",
+    "viewAll": "View all",
+    "txAbbr": "tx",
+    "opsAbbr": "ops",
+    "prevAbbr": "prev",
     "height": "Height",
-    "hash": "Hash",
-    "time": "Time",
     "transactions": "Transactions",
     "nameOps": "Name ops",
     "sincePrev": "Interval",
     "previous": "Previous",
-    "merkle": "Merkle",
     "awaitingBlock": "Awaiting block data…",
     "namespaces": "Namespaces",
     "prefix": "Prefix",
@@ -126,8 +130,6 @@
     "shown": "{n} shown"
   },
   "name": {
-    "record": "name record",
-    "backRegistry": "← registry",
     "expiredBanner": "This name is EXPIRED and no longer owned. It may be re-registered by anyone.",
     "currentRecord": "Current Record",
     "name": "Name",
@@ -184,7 +186,6 @@
     "empty": "The mempool is empty — there are no unconfirmed transactions at all right now."
   },
   "ns": {
-    "namespace": "namespace",
     "totalNames": "Total {ns}/ names",
     "live": "Live",
     "expired": "Expired",
@@ -217,11 +218,17 @@
     "lastBlock": "Last block",
     "avgBlock": "Avg block time",
     "priceHistory": "NMC price",
-    "priceSource": "Daily USD · {src} · no API key",
+    "priceRange": "Price range",
+    "range7d": "7d",
+    "range1m": "1m",
+    "range3m": "3m",
+    "range1y": "1y",
     "volume24h": "24h volume",
     "ath": "ATH",
     "hashrateHistory": "Global hashrate",
+    "hashrateRange": "Hashrate range",
     "opsHistory": "Name operations",
+    "opsRange": "Operations range",
     "opsLead": "Confirmed name ops per day in the indexed window (commitments hidden).",
     "network": "Chain",
     "chain": "Network",
@@ -248,7 +255,22 @@
     "hash": "Hash",
     "time": "Time",
     "txs": "Txs",
-    "nameOps": "Name Ops"
+    "nameOps": "Name Ops",
+    "empty": "No blocks in the index yet.",
+    "noMatch": "No blocks match these filters.",
+    "searchPlaceholder": "Height or hash…",
+    "filter": "Filter",
+    "clear": "Clear",
+    "allOps": "All blocks",
+    "withOps": "With name ops",
+    "busyOps": "10+ name ops",
+    "noOps": "No name ops",
+    "opsRegisters": "NAME_FIRSTUPDATE / register",
+    "opsUpdates": "NAME_UPDATE",
+    "opsCommitments": "NAME_NEW commitments",
+    "chainTip": "chain tip #{n}",
+    "fromHeight": "from #{n}",
+    "matching": "{n} matching"
   },
   "block": {
     "back": "← blocks",
@@ -281,7 +303,6 @@
   },
   "tx": {
     "title": "Transaction",
-    "crumb": "namecoin transaction",
     "summary": "Summary",
     "txid": "Txid",
     "block": "Block",

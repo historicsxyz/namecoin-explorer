@@ -110,6 +110,14 @@ describe('buildSeo', () => {
     const missing = buildSeo(req({ path: '/nope' }), resLocals('error'));
     assert.equal(missing.noindex, true);
     assert.match(missing.title, /not found/i);
+
+    const blocksQ = buildSeo(req({ path: '/blocks', query: { q: '808000' } }), resLocals('blocks'));
+    assert.equal(blocksQ.noindex, true);
+    assert.equal(blocksQ.canonical, 'http://127.0.0.1:3100/blocks');
+    const blocksOps = buildSeo(req({ path: '/blocks', query: { ops: 'with' } }), resLocals('blocks'));
+    assert.equal(blocksOps.noindex, true);
+    const blocksPlain = buildSeo(req({ path: '/blocks' }), resLocals('blocks'));
+    assert.equal(blocksPlain.noindex, false);
   });
 
   it('uses German copy when lang is de', () => {

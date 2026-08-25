@@ -37,7 +37,6 @@ lib/
   txops.js             NAME_NEW / FIRSTUPDATE / UPDATE
   expiry.js            36000 / 4032
   routes.js            ops, blocks, txs, stats, /api/*
-  registry.js          retired stub (throws)
 locales/               en.json, de.json  (restart after edits)
 views/                 EJS (layout, pages, includes/_icon.ejs)
 public/css/            explorer.css

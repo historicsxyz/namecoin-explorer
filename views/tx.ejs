@@ -23,7 +23,7 @@
         <% nameOps.forEach(o => { %>
         <tr>
           <td><%= o.vout %></td>
-          <td><span class="pill blue"><%= o.op.replace('OP_NAME_','') %></span></td>
+          <td><%- include('includes/_op-pill', { op: o.op }) %></td>
           <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
           <td class="mono" style="max-width:280px;word-break:break-all;white-space:pre-wrap"><%= String(o.value||'') %></td>
         </tr>

@@ -10,7 +10,7 @@ const {
 } = require('../lib/chainmetrics');
 const { TARGET_BLOCK_SEC } = require('../lib/expiry');
 const { lineChart } = require('../lib/svgchart');
-const { headerTickers } = require('../lib/statsdata');
+const { headerTickers, parsePriceRange, slicePriceSeries, statsHref } = require('../lib/statsdata');
 const {
   parsePaprikaTicker,
   parsePaprikaHistory,
@@ -150,5 +150,38 @@ describe('header tickers', () => {
     assert.notEqual(tk.hashrateLabel, '—');
     assert.match(tk.hrSpark.svg, /chart-line/);
     cache.close();
+  });
+});
+
+describe('price range', () => {
+  it('defaults unknown keys to 1y', () => {
+    assert.equal(parsePriceRange(), '1y');
+    assert.equal(parsePriceRange('nope'), '1y');
+    assert.equal(parsePriceRange('7d'), '7d');
+  });
+
+  it('slices a daily series to the selected window', () => {
+    const day = 86400 * 1000;
+    const series = [];
+    for (let i = 0; i < 365; i++) series.push({ t: i * day, v: i });
+    const week = slicePriceSeries(series, '7d');
+    const month = slicePriceSeries(series, '1m');
+    const year = slicePriceSeries(series, '1y');
+    assert.ok(week.length <= 8);
+    assert.ok(week.length >= 2);
+    assert.ok(month.length > week.length);
+    assert.equal(year.length, 365);
+    assert.equal(week[week.length - 1].v, 364);
+  });
+
+  it('keeps other chart ranges when one changes', () => {
+    const href = statsHref({ range: '7d', hr: '1m', ops: '3m' }, 'ops', '1y');
+    assert.equal(href, '/stats?range=7d&hr=1m');
+  });
+
+  it('omits 1y from stats URLs as the default', () => {
+    assert.equal(statsHref({ range: '1y', hr: '1y', ops: '1y' }, 'range', '1y'), '/stats');
+    assert.equal(statsHref({ range: '7d', hr: '1y', ops: '1y' }, 'range', '1y'), '/stats');
+    assert.equal(statsHref({ range: '1y', hr: '1y', ops: '1y' }, 'hr', '7d'), '/stats?hr=7d');
   });
 });

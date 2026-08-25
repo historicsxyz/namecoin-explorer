@@ -13,23 +13,37 @@
   <div class="panel latest-block">
     <h2>
       <%- include('includes/_icon', {icon:'blocks'}) %> <%= t('home.latestBlock') %>
-      <% if (block) { %><a class="btn btn-ghost latest-block-link" href="/block/<%= block.hash %>"><%= t('home.viewBlock') %></a><% } %>
+      <% if (blocks && blocks.length) { %><a class="btn btn-ghost latest-block-link" href="/blocks"><%= t('home.viewAll') %></a><% } %>
     </h2>
-    <% if (block) { %>
-    <dl class="dl">
-      <dt><%= t('home.height') %></dt>
-      <dd><a href="/block/<%= block.hash %>"><%= nfmt(block.height) %></a> <span class="dim"><%= timeAgo(block.time) %></span></dd>
-      <dt><%= t('home.hash') %></dt>
-      <dd class="mono"><a href="/block/<%= block.hash %>" title="<%= block.hash %>"><%= block.hash.slice(0, 28) %>…</a></dd>
-      <dt><%= t('home.transactions') %></dt>
-      <dd><%= block.nTx != null ? nfmt(block.nTx) : '—' %></dd>
-      <dt><%= t('home.nameOps') %></dt>
-      <dd><%= nfmt(block.nameOpCount || 0) %></dd>
-      <dt><%= t('home.sincePrev') %></dt>
-      <dd><%= fmtDuration(block.intervalSec) %></dd>
-      <dt><%= t('home.previous') %></dt>
-      <dd><% if (block.prev) { %><a href="/block/<%= block.prev %>"><%= block.prevHeight != null ? nfmt(block.prevHeight) : block.prev.slice(0, 20) + '…' %></a><% } else { %>—<% } %></dd>
-    </dl>
+    <% if (blocks && blocks.length) { %>
+      <div class="lb-clip">
+        <div class="timeline lb-timeline">
+          <% blocks.forEach(function (block, i) { %>
+          <article class="tl-item lb-item<%= i >= 3 ? ' lb-peek' : '' %>"<% if (i >= 3) { %> inert<% } %>>
+            <div class="tl-rail">
+              <span class="tl-dot<%= i === 0 ? ' dot-register' : '' %>"></span>
+            </div>
+            <div class="tl-content">
+              <a class="lb-main" href="/block/<%= block.hash %>">
+                <div class="lb-head">
+                  <span class="lb-height"><%= nfmt(block.height) %></span>
+                  <span class="lb-ago"><% const ra = relDur(block.time); %><% if (ra) { %><%= t(ra.future ? 'time.in' : 'time.ago', { t: ra.t }) %><% } %></span>
+                </div>
+                <div class="lb-hash mono" title="<%= block.hash %>"><%= block.hash %></div>
+              </a>
+              <div class="lb-meta">
+                <span title="<%= t('home.transactions') %>"><strong><%= block.nTx != null ? nfmt(block.nTx) : '—' %></strong> <%= t('home.txAbbr') %></span>
+                <span title="<%= t('home.nameOps') %>"><strong><%= nfmt(block.nameOpCount || 0) %></strong> <%= t('home.opsAbbr') %></span>
+                <span title="<%= t('home.sincePrev') %>"><strong><%= fmtDuration(block.intervalSec) %></strong></span>
+                <% if (block.prev) { %>
+                  <a href="/block/<%= block.prev %>" title="<%= t('home.previous') %>"><%= t('home.prevAbbr') %> <%= block.prevHeight != null ? nfmt(block.prevHeight) : block.prev.slice(0, 10) + '…' %></a>
+                <% } %>
+              </div>
+            </div>
+          </article>
+          <% }) %>
+        </div>
+      </div>
     <% } else { %><p class="muted"><%= t('home.awaitingBlock') %></p><% } %>
   </div>
 

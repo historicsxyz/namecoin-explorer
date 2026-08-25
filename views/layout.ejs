@@ -38,7 +38,7 @@
   <% if (seo.jsonLd) { %>
   <script type="application/ld+json"><%- seo.jsonLd %></script>
   <% } %>
-  <link rel="stylesheet" href="/css/explorer.css?v=49">
+  <link rel="stylesheet" href="/css/explorer.css?v=65">
   <script>
     try {
       var savedTheme = localStorage.getItem('nmc-theme');
@@ -89,7 +89,7 @@
         </div>
         <div class="status-cell">
           <span class="k"><%- include('includes/_icon', {icon: (locals.chainInfo&&locals.chainInfo.initialblockdownload) ? 'clock' : 'check'}) %> <%= t('status.sync') %></span>
-          <span class="v" id="sync"><%= (locals.chainInfo&&locals.chainInfo.initialblockdownload)?t('status.syncing'):t('status.ready') %></span>
+          <span class="v <%= (locals.chainInfo&&locals.chainInfo.initialblockdownload) ? 'warn' : 'ok' %>" id="sync"><%= (locals.chainInfo&&locals.chainInfo.initialblockdownload)?t('status.syncing'):t('status.ready') %></span>
         </div>
       </div>
       <button type="button" class="theme-toggle" data-theme-toggle aria-label="<%= t('aria.theme') %>">
@@ -125,7 +125,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.7' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.7' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.8' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.0.8' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>
@@ -225,12 +225,26 @@
       sinput.addEventListener('input', () => {
         clearTimeout(timer);
         const q = sinput.value.trim();
-        if (q.length < 2) { sresults.innerHTML=''; sresults.style.display='none'; return; }
+        if (q.length < 2) { sresults.replaceChildren(); sresults.style.display='none'; return; }
         timer = setTimeout(async () => {
           try {
             const r = await fetch('/api/search?q=' + encodeURIComponent(q));
             const j = await r.json();
-            sresults.innerHTML = (j.items||[]).map(i=>`<a href="/name/${encodeURIComponent(i.name)}">${i.name}</a>`).join('') || <%- JSON.stringify('<div class="empty">' + t('search.noMatch') + '</div>') %>;
+            const items = j.items || [];
+            sresults.replaceChildren();
+            if (!items.length) {
+              const empty = document.createElement('div');
+              empty.className = 'empty';
+              empty.textContent = <%- JSON.stringify(t('search.noMatch')) %>;
+              sresults.appendChild(empty);
+            } else {
+              for (const i of items) {
+                const a = document.createElement('a');
+                a.href = '/name/' + encodeURIComponent(i.name);
+                a.textContent = i.name == null ? '' : String(i.name);
+                sresults.appendChild(a);
+              }
+            }
             sresults.style.display = 'block';
           } catch(e) {}
         }, 250);

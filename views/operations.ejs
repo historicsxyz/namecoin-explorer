@@ -12,6 +12,9 @@
       <option value="NAME_FIRSTUPDATE" <%= op==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('ops.firstupdate') %></option>
       <option value="NAME_UPDATE" <%= op==='NAME_UPDATE'?'selected':'' %>><%= t('ops.update') %></option>
     </select>
+    <% if (typeof limit !== 'undefined' && limit && limit !== 20) { %>
+      <input type="hidden" name="limit" value="<%= limit %>">
+    <% } %>
     <label class="filterbar-check">
       <input type="checkbox" name="commitments" value="1" <%= (typeof commitments !== 'undefined' && commitments) ? 'checked' : '' %> onchange="this.form.submit()">
       <%= t('ops.showCommitments') %>
@@ -26,20 +29,17 @@
 </div>
 
 <div class="panel">
-  <table>
-    <thead><tr><th><%= t('ops.block') %></th><th><%= t('ops.operation') %></th><th><%= t('ops.name') %></th><th><%= t('ops.value') %></th><th><%= t('ops.time') %></th><th><%= t('ops.tx') %></th></tr></thead>
+  <table class="ops-table">
+    <thead><tr><th><%= t('ops.operation') %></th><th><%= t('ops.name') %></th><th><%= t('ops.value') %></th><th><%= t('ops.block') %></th><th><%= t('ops.tx') %></th><th><%= t('ops.time') %></th></tr></thead>
     <tbody>
       <% (feed||[]).forEach(o => { %>
       <tr>
-        <td class="mono"><a href="/block/<%= o.block %>"><%= nfmt(o.block) %></a></td>
-        <td>
-          <% const l = o.displayOp || o.op || ''; %>
-          <span class="pill <%= l==='NAME_NEW'?'purple':l==='NAME_FIRSTUPDATE'?'blue':l==='TRANSFER'?'pink':l==='NAME_UPDATE'?'yellow':'gray' %>"><%= l.replace(/^NAME_/,'') %></span>
-        </td>
+        <td><%- include('includes/_op-pill', { op: o.displayOp || o.op }) %></td>
         <td class="mono"><a href="/name/<%= encodeURIComponent(o.name||'') %>"><%= o.name || '—' %></a></td>
         <td class="mono" style="max-width:220px;overflow:hidden;text-overflow:ellipsis"><%= String(o.value||'').slice(0,40) %></td>
-        <td class="mono" style="font-size:11px;color:var(--dim)"><%= o.time ? new Date(o.time*1000).toLocaleString() : '' %></td>
+        <td class="mono"><a href="/block/<%= o.block %>"><%= nfmt(o.block) %></a></td>
         <td class="mono" style="font-size:11px"><a href="/tx/<%= o.txid %>"><%= o.txid?o.txid.slice(0,12)+'…':'' %></a></td>
+        <td class="mono" style="font-size:11px;color:var(--dim)"><%= o.time ? new Date(o.time*1000).toLocaleString() : '' %></td>
       </tr>
       <% }) %>
       <% if (!feed || feed.length===0) { %>
@@ -47,4 +47,5 @@
       <% } %>
     </tbody>
   </table>
+  <%- include('includes/_pager') %>
 </div>

@@ -1,0 +1,2 @@
+<% const l = String(typeof op !== 'undefined' && op != null ? op : ''); %>
+<span class="pill <%= l==='NAME_NEW'?'purple':l==='NAME_FIRSTUPDATE'?'blue':l==='TRANSFER'?'pink':l==='NAME_UPDATE'?'yellow':'gray' %>"><%= l.replace(/^NAME_/,'') %></span>

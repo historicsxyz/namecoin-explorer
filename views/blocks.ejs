@@ -1,18 +1,65 @@
 <div class="topbar"><h1><%- include('includes/_icon', {icon:'blocks'}) %> <%= t('blocks.title') %></h1></div>
 
+<div class="filterbar">
+  <form action="/blocks" method="get">
+    <input class="blocks-q" type="text" name="q" value="<%= q||'' %>" placeholder="<%= t('blocks.searchPlaceholder') %>" spellcheck="false" autocomplete="off" inputmode="search">
+    <select name="ops" onchange="this.form.submit()">
+      <option value=""><%= t('blocks.allOps') %></option>
+      <option value="with" <%= ops==='with'?'selected':'' %>><%= t('blocks.withOps') %></option>
+      <option value="busy" <%= ops==='busy'?'selected':'' %>><%= t('blocks.busyOps') %></option>
+      <option value="none" <%= ops==='none'?'selected':'' %>><%= t('blocks.noOps') %></option>
+      <option value="NAME_FIRSTUPDATE" <%= ops==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('blocks.opsRegisters') %></option>
+      <option value="NAME_UPDATE" <%= ops==='NAME_UPDATE'?'selected':'' %>><%= t('blocks.opsUpdates') %></option>
+      <option value="NAME_NEW" <%= ops==='NAME_NEW'?'selected':'' %>><%= t('blocks.opsCommitments') %></option>
+    </select>
+    <% if (typeof limit !== 'undefined' && limit && limit !== 20) { %>
+      <input type="hidden" name="limit" value="<%= limit %>">
+    <% } %>
+    <button class="btn" type="submit"><%= t('blocks.filter') %></button>
+    <% if (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid)) { %>
+      <a class="btn btn-ghost" href="/blocks"><%= t('blocks.clear') %></a>
+    <% } %>
+  </form>
+  <div class="filterbar-meta">
+    <span><%= t('blocks.chainTip', { n: nfmt(height) }) %></span>
+    <% if (typeof maxHeight !== 'undefined' && maxHeight != null) { %>
+      <span><%= t('blocks.fromHeight', { n: nfmt(maxHeight) }) %></span>
+    <% } %>
+    <% if (typeof pager !== 'undefined' && pager && (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid))) { %>
+      <span><%= t('blocks.matching', { n: nfmt(pager.total) }) %></span>
+    <% } %>
+  </div>
+</div>
+
 <div class="panel">
-  <table>
-    <thead><tr><th><%= t('blocks.height') %></th><th><%= t('blocks.hash') %></th><th><%= t('blocks.time') %></th><th><%= t('blocks.txs') %></th><th><%= t('blocks.nameOps') %></th></tr></thead>
-    <tbody>
-      <% (blocks||[]).forEach(b => { %>
+  <table class="blocks-table">
+    <thead>
       <tr>
-        <td><a href="/block/<%= b.hash %>"><%= nfmt(b.height) %></a></td>
+        <th class="blocks-rail-h" aria-hidden="true"></th>
+        <th class="blocks-h"><%= t('blocks.height') %></th>
+        <th><%= t('blocks.hash') %></th>
+        <th><%= t('blocks.time') %></th>
+        <th><%= t('blocks.txs') %></th>
+        <th><%= t('blocks.nameOps') %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (blocks||[]).forEach((b, i) => { %>
+      <tr>
+        <td class="blocks-rail-c" aria-hidden="true">
+          <span class="blocks-rail"><span class="tl-dot<%= (i === 0 && b.height === height) ? ' dot-register' : '' %>"></span></span>
+        </td>
+        <td class="blocks-h"><a href="/block/<%= b.hash %>"><%= nfmt(b.height) %></a></td>
         <td class="hash"><a href="/block/<%= b.hash %>"><%= b.hash.slice(0,22) %>…</a></td>
         <td class="mono" style="font-size:11px;color:var(--dim)"><%= new Date(b.time*1000).toLocaleString() %></td>
         <td><%= nfmt(b.nTx) %></td>
-        <td><%= b._nameOpCount!=null ? b._nameOpCount : '—' %></td>
+        <td><%= b._nameOpCount!=null ? nfmt(b._nameOpCount) : '—' %></td>
       </tr>
       <% }) %>
+      <% if (!blocks || !blocks.length) { %>
+        <tr><td colspan="6" class="empty"><%= (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid)) ? t('blocks.noMatch') : t('blocks.empty') %></td></tr>
+      <% } %>
     </tbody>
   </table>
+  <%- include('includes/_pager') %>
 </div>

@@ -35,7 +35,7 @@
     <div class="n"><%= stats.chain && stats.chain.blocks != null ? nfmt(stats.chain.blocks) : '—' %></div>
     <div class="l"><%= t('stats.blockHeight') %></div>
     <% if (stats.lastBlockTime) { %>
-      <div class="stat-note"><%= t('stats.lastBlock') %> <%= timeAgo(stats.lastBlockTime) %></div>
+      <div class="stat-note"><%= t('stats.lastBlock') %> <% const ra = relDur(stats.lastBlockTime); %><% if (ra) { %><%= t(ra.future ? 'time.in' : 'time.ago', { t: ra.t }) %><% } %></div>
     <% } %>
   </div>
 </div>
@@ -69,7 +69,13 @@
 
 <div class="grid cols-2">
   <div class="panel chart-panel">
-    <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('stats.priceHistory') %></h2>
+    <h2>
+      <%- include('includes/_icon', {icon:'activity'}) %> <%= t('stats.priceHistory') %>
+      <% const pr = (typeof priceRange !== 'undefined' && priceRange) || (stats && stats.priceRange) || '1y'; %>
+      <% const hrr = (typeof hrRange !== 'undefined' && hrRange) || (stats && stats.hrRange) || '1y'; %>
+      <% const opr = (typeof opsRange !== 'undefined' && opsRange) || (stats && stats.opsRange) || '1y'; %>
+      <%- include('includes/_chart-range', { aria: t('stats.priceRange'), param: 'range', current: pr, statsHref: statsHref }) %>
+    </h2>
     <div class="chart-meta">
       <span><%= t('stats.volume24h') %> <strong><%= stats.volumeLabel || '—' %></strong></span>
       <span><%= t('stats.ath') %> <strong><%= stats.athLabel || '—' %></strong></span>
@@ -78,13 +84,15 @@
     <% if (stats.priceChart && stats.priceChart.svg) { %>
       <div class="chart-wrap"><%- stats.priceChart.svg %></div>
       <% if (stats.priceAxis) { %><div class="chart-axis"><span><%= stats.priceAxis.span %></span><span><%= stats.priceAxis.range %></span></div><% } %>
-      <% if (stats.marketSource) { %><div class="chart-source"><%= t('stats.priceSource', { src: stats.marketSource }) %></div><% } %>
     <% } else { %>
       <p class="chart-empty"><%= t('stats.noPriceSeries') %></p>
     <% } %>
   </div>
   <div class="panel chart-panel">
-    <h2><%- include('includes/_icon', {icon:'hash'}) %> <%= t('stats.hashrateHistory') %></h2>
+    <h2>
+      <%- include('includes/_icon', {icon:'hash'}) %> <%= t('stats.hashrateHistory') %>
+      <%- include('includes/_chart-range', { aria: t('stats.hashrateRange'), param: 'hr', current: hrr, statsHref: statsHref }) %>
+    </h2>
     <% if (stats.hrChart && stats.hrChart.svg) { %>
       <div class="chart-wrap"><%- stats.hrChart.svg %></div>
       <% if (stats.hrAxis) { %><div class="chart-axis"><span><%= stats.hrAxis.span %></span><span><%= stats.hrAxis.range %></span></div><% } %>
@@ -96,7 +104,10 @@
 
 <div class="grid cols-2">
   <div class="panel chart-panel">
-    <h2><%- include('includes/_icon', {icon:'list'}) %> <%= t('stats.opsHistory') %></h2>
+    <h2>
+      <%- include('includes/_icon', {icon:'list'}) %> <%= t('stats.opsHistory') %>
+      <%- include('includes/_chart-range', { aria: t('stats.opsRange'), param: 'ops', current: opr, statsHref: statsHref }) %>
+    </h2>
     <p class="chart-lead"><%= t('stats.opsLead') %></p>
     <% if (stats.opsChart && stats.opsChart.svg) { %>
       <div class="chart-wrap"><%- stats.opsChart.svg %></div>
@@ -141,7 +152,7 @@
 </div>
 
 <div class="panel">
-  <h2><%- include('includes/_icon', {icon:'key'}) %> <%= t('stats.holders') %></h2>
+  <h2><%- include('includes/_icon', {icon:'trophy'}) %> <%= t('stats.holders') %></h2>
   <% if (!(stats.topAddresses || []).length) { %>
     <p class="chart-empty"><%= t('stats.noHolders') %></p>
   <% } else { %>

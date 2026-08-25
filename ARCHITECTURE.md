@@ -53,7 +53,7 @@ Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Au
 
 ### `lib/ingest.js`
 
-Replaces the old 50k-row `name_scan` dump. `lib/registry.js` is a stub that throws.
+Replaces the old 50k-row `name_scan` dump.
 
 1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names.
 2. **First run** — rewind ~36,000 blocks (one expiry window). `NMC_INGEST_FROM=0` or `genesis` starts at height 0 (`txindex=1`; slow; one writer).

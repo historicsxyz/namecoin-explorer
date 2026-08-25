@@ -24,7 +24,7 @@
       <% (pending||[]).forEach(p => { %>
         <tr>
           <td class="mono"><a href="/name/<%= encodeURIComponent(p.name) %>"><%= p.name %></a></td>
-          <td><span class="pill <%= p.op==='NAME_NEW'?'purple':p.op==='NAME_FIRSTUPDATE'?'blue':'yellow' %>"><%= p.op %></span></td>
+          <td><%- include('includes/_op-pill', { op: p.op }) %></td>
           <td class="mono" style="max-width:300px;word-break:break-all;white-space:pre-wrap"><%= String(p.value||'') %></td>
         </tr>
       <% }) %>
