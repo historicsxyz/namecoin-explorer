@@ -1,12 +1,6 @@
 <% const isCompact = typeof compact !== 'undefined' && compact; %>
 <div class="value-wrap<%= isCompact ? ' compact' : '' %>">
-<% if (decoded && decoded.kind === 'list' && decoded.items && decoded.items.length) { %>
-  <ol class="value-list">
-    <% decoded.items.forEach(item => { %>
-    <li><% if (item.isObject) { %><pre class="value"><%= item.value %></pre><% } else { %><span class="mono value-plain"><%= item.value %></span><% } %></li>
-    <% }) %>
-  </ol>
-<% } else if (decoded && decoded.raw) { %>
+<% if (decoded && decoded.raw) { %>
   <pre class="value"><%= decoded.raw %></pre>
 <% } else if (typeof fallback !== 'undefined' && fallback) { %>
   <pre class="value"><%= fallback %></pre>

@@ -567,16 +567,6 @@ pre.value {
   max-height: min(60vh, 28rem);
   overflow: auto;
 }
-.value-plain {
-  display: block;
-  max-width: 100%;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  word-break: break-all;
-}
-.value-list { margin: 0; padding: 0 0 8px 1.35em; max-width: 100%; min-width: 0; }
-.value-list li { margin: 8px 0; min-width: 0; max-width: 100%; overflow: hidden; }
-.value-list .value { margin-top: 6px; max-height: 200px; }
 .dl dd .value { margin-top: 4px; max-height: 200px; }
 .value-wrap.compact .value { max-height: 160px; font-size: 12px; padding: 10px 12px; }
 .api-json { max-height: none; }
@@ -621,7 +611,6 @@ pre.value {
   color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
   font-size: 10.5px; font-weight: 650;
 }
-.tl-content .value-list { padding-bottom: 0; }
 .tl-content .value { max-height: 160px; font-size: 12px; }
 .dl.compact {
   grid-template-columns: minmax(0, 100px) minmax(0, 1fr);

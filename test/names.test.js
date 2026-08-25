@@ -29,13 +29,14 @@ describe('classifyValue / renderValue', () => {
     assert.equal(cls.parsed[1], 'reserved');
 
     const decoded = renderValue({ value });
-    assert.equal(decoded.kind, 'list');
-    assert.equal(decoded.items.length, 4);
-    assert.equal(decoded.items[0].isObject, true);
-    assert.match(decoded.items[0].value, /"avatar"/);
-    assert.doesNotMatch(decoded.items[0].value, /\\"/);
-    assert.equal(decoded.items[1].isObject, false);
-    assert.equal(decoded.items[1].value, 'reserved');
+    assert.equal(decoded.kind, 'json');
+    const parsed = JSON.parse(decoded.raw);
+    assert.equal(parsed.length, 4);
+    assert.equal(parsed[0].avatar.url, 'https://example.com/a.png');
+    assert.equal(parsed[1], 'reserved');
+    assert.match(decoded.raw, /"avatar"/);
+    assert.doesNotMatch(decoded.raw, /\\"/);
+    assert.match(decoded.raw, /reserved/);
   });
 
   it('unwraps quote-wrapped and double-encoded JSON objects', () => {
