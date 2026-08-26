@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Namecoin Explorer"
+    "title": "Namecoin Explorer",
+    "tagline": "community"
   },
   "nav": {
     "home": "Home",
@@ -92,7 +93,7 @@
   },
   "og": {
     "title": "Open Graph",
-    "alt": "Namecoin Explorer — names, operations, and blocks",
+    "alt": "Namecoin community — Explorer. Names, operations, and blocks",
     "note": "This 1200×630 card is what social apps and messengers show when someone shares a page from this explorer.",
     "credit": "Coin mark © Namecoin project, CC BY 4.0 —"
   },

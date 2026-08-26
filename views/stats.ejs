@@ -5,7 +5,7 @@
 
 <div class="grid cols-4 stats-kpis">
   <div class="stat">
-    <%- include('includes/_icon', {icon:'activity'}) %>
+    <%- include('includes/_icon', {icon:'dollar'}) %>
     <div class="n"><%= stats.priceLabel || '—' %></div>
     <div class="l"><%= t('stats.price') %></div>
     <% if (ch != null && Number.isFinite(Number(ch))) { %>
@@ -14,9 +14,6 @@
       <div class="stat-note"><%= t('stats.marketOff') %></div>
     <% } else if (m.error && !m.price) { %>
       <div class="stat-note"><%= t('stats.marketUnavailable') %></div>
-    <% } %>
-    <% if (stats.priceSpark && stats.priceSpark.svg) { %>
-      <div class="chart-spark"><%- stats.priceSpark.svg %></div>
     <% } %>
   </div>
   <div class="stat">
@@ -42,7 +39,7 @@
 
 <div class="grid cols-4 stats-kpis">
   <div class="stat">
-    <%- include('includes/_icon', {icon:'tag'}) %>
+    <%- include('includes/_icon', {icon:'coin'}) %>
     <div class="n"><%= stats.totalNames != null ? nfmt(stats.totalNames) : '—' %></div>
     <div class="l"><%= t('stats.totalNames') %></div>
   </div>

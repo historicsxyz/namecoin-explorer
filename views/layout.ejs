@@ -38,7 +38,7 @@
   <% if (seo.jsonLd) { %>
   <script type="application/ld+json"><%- seo.jsonLd %></script>
   <% } %>
-  <link rel="stylesheet" href="/css/explorer.css?v=72">
+  <link rel="stylesheet" href="/css/explorer.css?v=75">
   <script>
     try {
       var savedTheme = localStorage.getItem('nmc-theme');
@@ -70,7 +70,7 @@
       <a class="<%= pg==='home'?'active':'' %>" href="/"><%- include('includes/_icon', {icon:'compass'}) %><span><%= t('nav.home') %></span></a>
       <details class="nav-group<%= namesOpen ? ' current' : '' %>"<%= namesOpen ? ' open' : '' %>>
         <summary>
-          <%- include('includes/_icon', {icon:'tag'}) %>
+          <%- include('includes/_icon', {icon:'coin'}) %>
           <span><%= t('nav.sectionNames') %></span>
         </summary>
         <div class="nav-sub">
@@ -100,7 +100,7 @@
           <span class="v" id="block-n">0</span>
         </div>
         <div class="status-cell">
-          <span class="k"><%- include('includes/_icon', {icon:'tag'}) %> <%= t('status.names') %></span>
+          <span class="k"><%- include('includes/_icon', {icon:'coin'}) %> <%= t('status.names') %></span>
           <span class="v" id="name-n">0</span>
         </div>
         <div class="status-cell">
@@ -145,7 +145,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.1' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.1' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.2' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.2' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>

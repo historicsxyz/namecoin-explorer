@@ -4,7 +4,7 @@
 
 <div class="grid cols-4">
   <div class="stat"><%- include('includes/_icon', {icon:'blocks'}) %><div class="n"><%= latest ? nfmt(latest) : '—' %></div><div class="l"><%= t('home.blockHeight') %></div></div>
-  <div class="stat"><%- include('includes/_icon', {icon:'tag'}) %><div class="n" id="st-total"><%= (namespaces||[]).reduce((a,r)=>a+r.total,0) %></div><div class="l"><%= t('home.totalNames') %></div></div>
+  <div class="stat"><%- include('includes/_icon', {icon:'coin'}) %><div class="n" id="st-total"><%= (namespaces||[]).reduce((a,r)=>a+r.total,0) %></div><div class="l"><%= t('home.totalNames') %></div></div>
   <div class="stat"><%- include('includes/_icon', {icon:'check'}) %><div class="n" style="color:var(--green)"><%= (namespaces||[]).reduce((a,r)=>a+(r.live||0),0) %></div><div class="l"><%= t('home.liveNames') %></div></div>
   <div class="stat"><%- include('includes/_icon', {icon:'clock'}) %><div class="n" style="color:var(--red)"><%= (namespaces||[]).reduce((a,r)=>a+(r.expired||0),0) %></div><div class="l"><%= t('home.expired') %></div></div>
 </div>

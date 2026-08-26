@@ -133,6 +133,15 @@ describe('NameCache stats series', () => {
 });
 
 describe('header tickers', () => {
+  it('uses last_networkhashps when headers have no difficulty', () => {
+    const cache = new NameCache(':memory:');
+    cache.metaSet('last_networkhashps', '1500000000000');
+    const tk = headerTickers(cache);
+    assert.notEqual(tk.hashrateLabel, '—');
+    assert.match(tk.hashrateLabel, /H\/s/);
+    cache.close();
+  });
+
   it('sparks hashrate from recent header difficulty', () => {
     const cache = new NameCache(':memory:');
     cache.insertBlock({

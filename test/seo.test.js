@@ -68,6 +68,7 @@ describe('buildSeo', () => {
     assert.equal(seo.noindex, false);
     assert.match(seo.description, /Namecoin/);
     assert.match(seo.jsonLd, /WebSite/);
+    assert.match(seo.jsonLd, /slogan/);
     assert.match(seo.jsonLd, /SearchAction/);
     assert.match(seo.jsonLd, /Organization/);
     assert.match(seo.jsonLd, /WebPage/);

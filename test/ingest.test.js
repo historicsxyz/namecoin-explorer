@@ -39,6 +39,36 @@ function nameTx(txid, op, name, value, address) {
   };
 }
 
+describe('IngestService.rememberMining', () => {
+  it('stores last difficulty and network hashrate for the header ticker', async () => {
+    const cache = new NameCache(':memory:');
+    cache.insertBlock({
+      header: { height: 10, hash: 'h', time: 1, prev: '0', ntx: 1, merkle: 'm' },
+      ops: [],
+      tipHeight: 10,
+    });
+    cache.setTip(10, 'h');
+    cache.metaSet('bootstrap_done', '1');
+    const rpc = {
+      call: async (method) => {
+        if (method === 'getblockchaininfo') {
+          return { blocks: 10, headers: 10, chain: 'main', difficulty: 99, initialblockdownload: false };
+        }
+        if (method === 'getnetworkhashps') return 1234567890;
+        if (method === 'getblockheader') return { difficulty: 99, time: 1 };
+        throw new Error(method);
+      },
+    };
+    const ingest = new IngestService(rpc, cache);
+    await ingest._doTick();
+    assert.equal(cache.metaGet('last_difficulty'), '99');
+    assert.equal(cache.metaGet('last_networkhashps'), '1234567890');
+    const { headerTickers } = require('../lib/statsdata');
+    assert.notEqual(headerTickers(cache).hashrateLabel, '—');
+    cache.close();
+  });
+});
+
 describe('IngestService.backfillName', () => {
   it('merges name_history onto a name that already has one windowed op', async () => {
     const cache = new NameCache(':memory:');
