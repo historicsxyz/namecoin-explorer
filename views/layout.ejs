@@ -38,7 +38,7 @@
   <% if (seo.jsonLd) { %>
   <script type="application/ld+json"><%- seo.jsonLd %></script>
   <% } %>
-  <link rel="stylesheet" href="/css/explorer.css?v=75">
+  <link rel="stylesheet" href="/css/explorer.css?v=84">
   <script>
     try {
       var savedTheme = localStorage.getItem('nmc-theme');
@@ -145,7 +145,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.2' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.2' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.3' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.3' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>
@@ -204,6 +204,25 @@
           });
         });
       } catch (e) {}
+    })();
+
+    // ---------- value decoded / raw ----------
+    (function valueModes() {
+      document.querySelectorAll('[data-value-mode]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute('data-value-for');
+          const mode = btn.getAttribute('data-value-mode');
+          const wrap = id && document.getElementById(id);
+          if (!wrap || !mode) return;
+          wrap.setAttribute('data-mode', mode);
+          document.querySelectorAll('[data-value-mode][data-value-for="' + id + '"]').forEach((b) => {
+            const on = b.getAttribute('data-value-mode') === mode;
+            b.classList.toggle('on', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        });
+      });
     })();
 
     // ---------- theme ----------

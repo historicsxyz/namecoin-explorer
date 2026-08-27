@@ -17,13 +17,23 @@ const { sendApiJson } = require('./lib/api-json');
 const { attachSeo, registerSeoRoutes } = require('./lib/seo');
 const {
   renderValue,
+  valuePreview,
   timelineFromOps,
   loadNameRecord,
 } = require('./lib/names');
 const { SEMI_EXPIRE_WINDOW, NAME_EXPIRY_DEPTH, shiftByBlocks } = require('./lib/expiry');
 const { headerTickers } = require('./lib/statsdata');
+const { formatDifficulty, bytesOnDisk, fmtNmc } = require('./lib/chainmetrics');
 const { lookupItems } = require('./lib/search');
 const registerRoutes = require('./lib/routes');
+const { TtlCache } = require('./lib/ttlcache');
+const { tokenBucket, rateLimitEnabled } = require('./lib/ratelimit');
+const {
+  attachHtmlCache,
+  cacheControl,
+  requestTimeout,
+  invalidateNameCaches,
+} = require('./lib/httpcache');
 
 function loadEnvFile(file) {
   if (!fs.existsSync(file)) return;
@@ -56,7 +66,15 @@ const rpc = new NamecoinRPC({
 });
 if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const cache = new NameCache(DB_PATH);
-const ingest = new IngestService(rpc, cache, ingestOptionsFromEnv());
+const httpCaches = {
+  html: new TtlCache({ max: 400, ttlMs: 20 * 1000, swrMs: 40 * 1000 }),
+  stats: new TtlCache({ max: 32, ttlMs: 15 * 1000, swrMs: 45 * 1000 }),
+  names: new TtlCache({ max: 500, ttlMs: 20 * 1000, swrMs: 60 * 1000 }),
+};
+const ingest = new IngestService(rpc, cache, {
+  ...ingestOptionsFromEnv(),
+  onUpdate: (evt) => invalidateNameCaches(httpCaches, evt && evt.names, evt || {}),
+});
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -67,15 +85,49 @@ app.use(layouts);
 app.use(compression());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.set('trust proxy', 1);
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(requestTimeout(Number(process.env.NMC_REQUEST_TIMEOUT_MS) || 60000));
+app.use(express.json({ limit: '32kb' }));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '7d',
+  etag: true,
+  index: false,
+  setHeaders(res, filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.css' || ext === '.js') {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    }
+  },
+}));
+app.use(cacheControl);
+if (rateLimitEnabled()) {
+  const apiLimit = tokenBucket({
+    windowMs: 60 * 1000,
+    max: 90,
+    skip: (req) => {
+      const u = String(req.originalUrl || req.path || '');
+      return u.startsWith('/api/search') || u.startsWith('/api/health');
+    },
+  });
+  const searchLimit = tokenBucket({ windowMs: 60 * 1000, max: 120 });
+  const statsLimit = tokenBucket({ windowMs: 60 * 1000, max: 60 });
+  app.use('/api/search', searchLimit);
+  app.use('/api', apiLimit);
+  app.use('/stats', statsLimit);
+}
 const logStream = fs.createWriteStream(path.join(__dirname, 'explorer.log'), { flags: 'a' });
 app.use(morgan('combined', { stream: logStream }));
+app.use(attachHtmlCache(httpCaches.html));
 
 const APP_VERSION = require('./package.json').version;
 app.locals.appVersion = APP_VERSION;
 app.locals.renderValue = renderValue;
+app.locals.valuePreview = valuePreview;
 app.locals.nfmt = (x) => (typeof x === 'number' ? x.toLocaleString() : x);
+app.locals.formatDifficulty = formatDifficulty;
+app.locals.bytesOnDisk = bytesOnDisk;
+app.locals.fmtNmc = fmtNmc;
 app.locals.fmtDuration = (sec) => {
   if (sec == null || !Number.isFinite(Number(sec))) return '—';
   const s = Math.abs(Math.floor(Number(sec)));
@@ -190,18 +242,20 @@ app.get('/og', (req, res) => {
 app.get('/names', async (req, res) => {
   res.locals.page = 'names';
   const { limit = 50, start = '', ns = null, status = null, q = null } = req.query;
+  const cap = Math.min(Number(limit) || 50, 50);
+  const startKey = String(start || '').slice(0, 255);
   let rows = [], total = 0;
   try {
     if (q) {
-      rows = cache.search(q, Math.min(Number(limit) || 50, 50));
+      rows = cache.search(String(q).slice(0, 80), cap);
       total = rows.length;
     } else {
-      rows = cache.page({ start, limit: Math.min(Number(limit) || 50, 50), ns, status });
+      rows = cache.page({ start: startKey, limit: cap, ns, status });
       total = rows.length;
     }
   } catch (e) { rows = []; }
   const namespaces = cache.countByNamespace();
-  res.render('names', { rows, total, ns, status, q, limit: Number(limit) || 50, namespaces });
+  res.render('names', { rows, total, ns, status, q, limit: cap, namespaces });
 });
 
 app.get('/api/search', async (req, res) => {
@@ -218,7 +272,9 @@ app.get('/name/:name', async (req, res) => {
   const rawName = req.params.name;
   const cached = (() => { try { return cache.get(rawName); } catch { return null; } })();
 
-  const loaded = await loadNameRecord(rpc, cache, rawName);
+  const loaded = httpCaches.names
+    ? await httpCaches.names.getOrLoad('p|' + rawName, () => loadNameRecord(rpc, cache, rawName))
+    : await loadNameRecord(rpc, cache, rawName);
   const show = loaded.show;
   const fromCache = loaded.fromCache;
   if (!show && loaded.error) res.locals.nameError = loaded.error;
@@ -321,7 +377,7 @@ app.get('/name/:name', async (req, res) => {
   });
 });
 
-registerRoutes(app, { rpc, cache, ingest });
+registerRoutes(app, { rpc, cache, ingest, caches: httpCaches });
 
 function sendHealth(req, res) {
   const tip = cache.getTip();
@@ -354,6 +410,7 @@ if (require.main === module) {
   });
   server.keepAliveTimeout = 65000;
   server.headersTimeout = 66000;
+  server.requestTimeout = Number(process.env.NMC_REQUEST_TIMEOUT_MS) || 60000;
   server.on('error', (e) => { console.error('Server error', e); process.exit(1); });
 
   try {

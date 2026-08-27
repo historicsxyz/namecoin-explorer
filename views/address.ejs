@@ -7,6 +7,8 @@
   <div class="panel"><p class="muted"><%= t('address.empty') %></p></div>
 <% } else { %>
 
+<p class="muted"><%= t('address.note') %></p>
+
 <div class="panel">
   <h2><%- include('includes/_icon', {icon:'coin'}) %> <%= t('address.names') %></h2>
   <% if (!(names||[]).length) { %>

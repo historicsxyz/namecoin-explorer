@@ -28,9 +28,12 @@ Scratch node: point `NMC_RPC_*` at testnet/regtest and `NMC_CACHE_DB` at a throw
 ```
 app.js                 boot, locals, home, /names, /name, /health
 lib/
-  rpc.js               JSON-RPC (cookie, hex encodings, concurrency)
+  rpc.js               JSON-RPC (cookie, hex encodings, concurrency + wait cap)
   ingest.js            block follow + paged name_scan
   cache.js             SQLite WAL + FTS5
+  ttlcache.js          in-process TTL LRU (HTML / stats / name payloads)
+  httpcache.js         HTML cache, Cache-Control, request timeout
+  ratelimit.js         per-IP token bucket
   search.js            header lookup (name / height / tx / address)
   seo.js               titles, canonical, OG, sitemap
   api-json.js          JSON vs HTML wrapper

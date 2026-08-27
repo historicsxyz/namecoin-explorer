@@ -127,6 +127,56 @@ describe('IngestService.backfillName', () => {
   });
 });
 
+describe('IngestService.onUpdate', () => {
+  it('emits names after a block and flush after a reorg settle', async () => {
+    const cache = new NameCache(':memory:');
+    const events = [];
+    const rpc = {
+      call: async (method) => {
+        if (method === 'getblockhash') return 'h1';
+        if (method === 'getblock') {
+          return {
+            hash: 'h1',
+            time: 1,
+            previousblockhash: '00',
+            merkleroot: 'm',
+            difficulty: 1,
+            tx: [nameTx('t1', 'name_update', 'd/our', '{}', 'N1')],
+          };
+        }
+        throw new Error(method);
+      },
+    };
+    const ingest = new IngestService(rpc, cache, { onUpdate: (e) => events.push(e) });
+    await ingest._ingestHeight(1, 1);
+    assert.equal(events.length, 1);
+    assert.deepEqual(events[0].names, ['d/our']);
+
+    cache.insertBlock({
+      header: { height: 2, hash: 'old2', time: 2, prev: 'h1', ntx: 1, merkle: 'm' },
+      ops: [],
+      tipHeight: 2,
+    });
+    cache.setTip(2, 'old2');
+    const reorgRpc = {
+      call: async (method, params) => {
+        if (method === 'getblockhash') {
+          const h = params[0];
+          if (h === 2) return 'new2';
+          if (h === 1) return 'h1';
+          return 'h0';
+        }
+        throw new Error(method);
+      },
+    };
+    const reorgEvents = [];
+    const reorg = new IngestService(reorgRpc, cache, { onUpdate: (e) => reorgEvents.push(e) });
+    await reorg._handleReorg({ height: 2, hash: 'old2' }, 2);
+    assert.ok(reorgEvents.some((e) => e.flush === true));
+    cache.close();
+  });
+});
+
 describe('IngestService.stop', () => {
   it('wakes poll sleep and waits for the loop to exit', async () => {
     const cache = new NameCache(':memory:');

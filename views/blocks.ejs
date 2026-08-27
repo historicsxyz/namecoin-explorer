@@ -1,22 +1,33 @@
 <div class="topbar"><h1><%- include('includes/_icon', {icon:'blocks'}) %> <%= t('blocks.title') %></h1></div>
 
+<% const blockOps = typeof ops !== 'undefined' ? ops : null; %>
+<% const blockRange = typeof range !== 'undefined' ? range : ''; %>
+<% const blockFiltered = !!(blockOps || blockRange || q || (typeof opsInvalid !== 'undefined' && opsInvalid) || (typeof rangeInvalid !== 'undefined' && rangeInvalid)); %>
+
 <div class="filterbar">
   <form action="/blocks" method="get">
     <input class="blocks-q" type="text" name="q" value="<%= q||'' %>" placeholder="<%= t('blocks.searchPlaceholder') %>" spellcheck="false" autocomplete="off" inputmode="search">
     <select name="ops" onchange="this.form.submit()">
       <option value=""><%= t('blocks.allOps') %></option>
-      <option value="with" <%= ops==='with'?'selected':'' %>><%= t('blocks.withOps') %></option>
-      <option value="busy" <%= ops==='busy'?'selected':'' %>><%= t('blocks.busyOps') %></option>
-      <option value="none" <%= ops==='none'?'selected':'' %>><%= t('blocks.noOps') %></option>
-      <option value="NAME_FIRSTUPDATE" <%= ops==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('blocks.opsRegisters') %></option>
-      <option value="NAME_UPDATE" <%= ops==='NAME_UPDATE'?'selected':'' %>><%= t('blocks.opsUpdates') %></option>
-      <option value="NAME_NEW" <%= ops==='NAME_NEW'?'selected':'' %>><%= t('blocks.opsCommitments') %></option>
+      <option value="with" <%= blockOps==='with'?'selected':'' %>><%= t('blocks.withOps') %></option>
+      <option value="none" <%= blockOps==='none'?'selected':'' %>><%= t('blocks.noOps') %></option>
+      <option value="busy" <%= blockOps==='busy'?'selected':'' %>><%= t('blocks.busyOps') %></option>
+      <option value="NAME_FIRSTUPDATE" <%= blockOps==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('blocks.opsRegisters') %></option>
+      <option value="NAME_UPDATE" <%= blockOps==='NAME_UPDATE'?'selected':'' %>><%= t('blocks.opsUpdates') %></option>
+      <option value="NAME_NEW" <%= blockOps==='NAME_NEW'?'selected':'' %>><%= t('blocks.opsCommitments') %></option>
+    </select>
+    <select name="range" onchange="this.form.submit()">
+      <option value=""><%= t('blocks.anyTime') %></option>
+      <option value="1h" <%= blockRange==='1h'?'selected':'' %>><%= t('blocks.range1h') %></option>
+      <option value="6h" <%= blockRange==='6h'?'selected':'' %>><%= t('blocks.range6h') %></option>
+      <option value="24h" <%= blockRange==='24h'?'selected':'' %>><%= t('blocks.range24h') %></option>
+      <option value="7d" <%= blockRange==='7d'?'selected':'' %>><%= t('blocks.range7d') %></option>
     </select>
     <% if (typeof limit !== 'undefined' && limit && limit !== 20) { %>
       <input type="hidden" name="limit" value="<%= limit %>">
     <% } %>
     <button class="btn" type="submit"><%= t('blocks.filter') %></button>
-    <% if (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid)) { %>
+    <% if (blockFiltered) { %>
       <a class="btn btn-ghost" href="/blocks"><%= t('blocks.clear') %></a>
     <% } %>
   </form>
@@ -25,7 +36,7 @@
     <% if (typeof maxHeight !== 'undefined' && maxHeight != null) { %>
       <span><%= t('blocks.fromHeight', { n: nfmt(maxHeight) }) %></span>
     <% } %>
-    <% if (typeof pager !== 'undefined' && pager && (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid))) { %>
+    <% if (blockFiltered && typeof pager !== 'undefined' && pager) { %>
       <span><%= t('blocks.matching', { n: nfmt(pager.total) }) %></span>
     <% } %>
   </div>
@@ -57,7 +68,7 @@
       </tr>
       <% }) %>
       <% if (!blocks || !blocks.length) { %>
-        <tr><td colspan="6" class="empty"><%= (q || ops || (typeof opsInvalid !== 'undefined' && opsInvalid)) ? t('blocks.noMatch') : t('blocks.empty') %></td></tr>
+        <tr><td colspan="6" class="empty"><%= blockFiltered ? t('blocks.noMatch') : t('blocks.empty') %></td></tr>
       <% } %>
     </tbody>
   </table>

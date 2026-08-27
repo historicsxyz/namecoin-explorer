@@ -49,8 +49,14 @@
 
   <% if (decoded) { %>
   <div class="panel">
-    <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('name.value') %></h2>
-    <%- include('includes/_value', { decoded: decoded, fallback: show.value || '' }) %>
+    <h2>
+      <%- include('includes/_icon', {icon:'file-text'}) %> <%= t('name.value') %>
+      <% const valueCanToggle = (decoded.table && decoded.table.length) || decoded.kind === 'json'; %>
+      <% if (valueCanToggle && (show.value || decoded.raw)) { %>
+      <%- include('includes/_value-modes', { wrapId: 'name-value' }) %>
+      <% } %>
+    </h2>
+    <%- include('includes/_value', { decoded: decoded, fallback: show.value || '', wrapId: 'name-value', headingToggle: true }) %>
   </div>
   <% } %>
 
@@ -58,7 +64,7 @@
     <h2><%- include('includes/_icon', {icon:'activity'}) %> <%= t('name.operationHistory', { n: (history||[]).length }) %></h2>
     <div class="timeline">
       <% const tlRev = (history||[]).slice().reverse(); %>
-      <% tlRev.forEach(h => { %>
+      <% tlRev.forEach((h, i) => { %>
       <% const ot = h.opLabel || h.opType || 'UPDATE'; %>
       <div class="tl-item">
         <div class="tl-rail">
@@ -78,9 +84,16 @@
           </div>
           <% if (h.value) { const hv = renderValue({ value: h.value }); %>
           <% if (hv && hv.kind !== 'empty') { %>
+          <% const hvId = 'vw-h-' + i; %>
+          <% const hvToggle = ((hv.table && hv.table.length) || hv.kind === 'json') && h.value; %>
           <div class="tl-value-block">
-            <span class="l"><%= t('name.value') %></span>
-            <%- include('includes/_value', { decoded: hv, compact: true, fallback: h.value }) %>
+            <div class="tl-value-head">
+              <span class="l"><%= t('name.value') %></span>
+              <% if (hvToggle) { %>
+              <%- include('includes/_value-modes', { wrapId: hvId }) %>
+              <% } %>
+            </div>
+            <%- include('includes/_value', { decoded: hv, compact: true, fallback: h.value, wrapId: hvId, headingToggle: true }) %>
           </div>
           <% } %>
           <% } %>

@@ -7,9 +7,10 @@ const {
   formatHashrate,
   sampleHeights,
   bytesOnDisk,
+  fmtNmc,
 } = require('../lib/chainmetrics');
 const { TARGET_BLOCK_SEC } = require('../lib/expiry');
-const { lineChart } = require('../lib/svgchart');
+const { lineChart, timeTicks } = require('../lib/svgchart');
 const { headerTickers, parsePriceRange, slicePriceSeries, statsHref } = require('../lib/statsdata');
 const {
   parsePaprikaTicker,
@@ -26,6 +27,8 @@ describe('chainmetrics', () => {
     assert.equal(hs, (2 ** 32) / TARGET_BLOCK_SEC);
     assert.match(formatHashrate(1e18), /EH\/s/);
     assert.equal(bytesOnDisk(2.5e9), '2.50 GB');
+    assert.equal(fmtNmc(6.25), '6.25 NMC');
+    assert.equal(fmtNmc(0.00000001), '0.00000001 NMC');
   });
 
   it('samples inclusive heights without duplicates', () => {
@@ -61,6 +64,7 @@ describe('svgchart', () => {
       { width: 72, height: 28, spark: true, padT: 5, padB: 5, padL: 4, padR: 8 },
     );
     assert.match(c.svg, /viewBox="0 0 72 28"/);
+    assert.match(c.svg, /preserveAspectRatio="none"/);
     const m = c.svg.match(/class="chart-dot" cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/);
     assert.ok(m);
     const cx = Number(m[1]);
@@ -70,6 +74,58 @@ describe('svgchart', () => {
     assert.ok(cx + r < 72);
     assert.ok(cy - r > 0);
     assert.ok(cy + r < 28);
+  });
+
+  it('does not draw x ticks on sparks', () => {
+    const c = lineChart(
+      [{ t: Date.UTC(2026, 0, 1), v: 1 }, { t: Date.UTC(2026, 0, 8), v: 2 }],
+      { spark: true },
+    );
+    assert.doesNotMatch(c.svg, /chart-tick-x/);
+  });
+
+  it('draws day labels on the x-axis for a 7d range', () => {
+    const t0 = Date.UTC(2026, 7, 20);
+    const pts = [];
+    for (let i = 0; i <= 7; i++) pts.push({ t: t0 + i * 86400000, v: i + 1 });
+    const c = lineChart(pts, { formatY: (v) => String(v), range: '7d' });
+    assert.match(c.svg, /chart-tick-x/);
+    assert.match(c.svg, /20 Aug/);
+    assert.match(c.svg, /chart-grid-x/);
+  });
+
+  it('draws month labels on the x-axis for a 1y range', () => {
+    const pts = [];
+    for (let i = 0; i <= 12; i++) pts.push({ t: Date.UTC(2025, 7 + i, 1), v: 1 + (i % 3) });
+    const c = lineChart(pts, { range: '1y' });
+    assert.match(c.svg, /chart-tick-x/);
+    assert.match(c.svg, /Aug '25|Oct|Dec/);
+  });
+});
+
+describe('timeTicks', () => {
+  it('uses daily ticks for 7d', () => {
+    const ticks = timeTicks(Date.UTC(2026, 7, 20), Date.UTC(2026, 7, 27), '7d');
+    assert.ok(ticks.length >= 5);
+    assert.match(ticks[0].label, /Aug/);
+    assert.ok(ticks.some((tk) => tk.label === '27' || tk.label === '27 Aug'));
+  });
+
+  it('uses weekly ticks for 1m', () => {
+    const ticks = timeTicks(Date.UTC(2026, 6, 28), Date.UTC(2026, 7, 27), '1m');
+    assert.ok(ticks.length >= 4);
+    assert.ok(ticks.length <= 6);
+    assert.match(ticks[0].label, /Jul|28 Jul/);
+  });
+
+  it('uses fortnightly ticks for 3m and month ticks for 1y', () => {
+    const q = timeTicks(Date.UTC(2026, 4, 27), Date.UTC(2026, 7, 27), '3m');
+    assert.ok(q.length >= 5);
+    assert.ok(q.some((tk) => /Jun/.test(tk.label)));
+    const y = timeTicks(Date.UTC(2025, 7, 28), Date.UTC(2026, 7, 27), '1y');
+    assert.ok(y.length >= 4);
+    assert.ok(y.length <= 8);
+    assert.match(y[0].label, /'/);
   });
 });
 
@@ -158,6 +214,25 @@ describe('header tickers', () => {
     assert.equal(tk.priceLabel, '—');
     assert.notEqual(tk.hashrateLabel, '—');
     assert.match(tk.hrSpark.svg, /chart-line/);
+    cache.close();
+  });
+
+  it('sparks hashrate across retargets, not the last 48 identical blocks', () => {
+    const cache = new NameCache(':memory:');
+    for (let h = 1; h <= 80; h++) {
+      cache.insertBlock({
+        header: {
+          height: h, hash: 'h' + h, time: h * 600, prev: 'p', ntx: 1, merkle: 'm',
+          difficulty: h <= 20 ? 100 : 200,
+        },
+        ops: [],
+        tipHeight: h,
+      });
+    }
+    const rows = cache.difficultySparkSeries(48);
+    assert.ok(new Set(rows.map((r) => r.difficulty)).size >= 2);
+    const tk = headerTickers(cache);
+    assert.notEqual(tk.hrSpark.dataMin, tk.hrSpark.dataMax);
     cache.close();
   });
 });

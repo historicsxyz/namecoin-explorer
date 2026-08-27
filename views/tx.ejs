@@ -11,7 +11,8 @@
     <% if (tx.blockhash) { %><dt><%= t('tx.block') %></dt><dd><a href="/block/<%= tx.blockhash %>"><%= tx.blockhash.slice(0,24) %>…</a></dd><% } %>
     <dt><%= t('tx.confirmations') %></dt><dd><%= tx.confirmations %></dd>
     <dt><%= t('tx.inOut') %></dt><dd><%= t('tx.inOutVal', { vin: (tx.vin||[]).length, vout: (tx.vout||[]).length }) %></dd>
-    <% if (tx.blocktime) { %><dt><%= t('tx.time') %></dt><dd><%= new Date(tx.blocktime*1000).toUTCString() %></dd><% } %>
+    <% if (tx.fee != null) { %><dt><%= t('tx.fee') %></dt><dd class="mono"><%= fmtNmc(tx.fee) %></dd><% } %>
+    <% if (tx.blocktime) { %><dt><%= t('tx.time') %></dt><dd><%- include('includes/_when', { unix: tx.blocktime }) %></dd><% } %>
   </dl>
 </div>
 <% } else if (nameOps && nameOps.length) { %>
@@ -21,7 +22,7 @@
     <dt><%= t('tx.txid') %></dt><dd class="mono"><%= txid %></dd>
     <% const h0 = nameOps[0]; %>
     <% if (h0 && h0.height != null) { %><dt><%= t('tx.block') %></dt><dd><a href="/block/<%= h0.height %>"><%= nfmt(h0.height) %></a></dd><% } %>
-    <% if (h0 && h0.time) { %><dt><%= t('tx.time') %></dt><dd><%= new Date(h0.time*1000).toUTCString() %></dd><% } %>
+    <% if (h0 && h0.time) { %><dt><%= t('tx.time') %></dt><dd><%- include('includes/_when', { unix: h0.time }) %></dd><% } %>
   </dl>
 </div>
 <% } %>
@@ -29,23 +30,48 @@
 <% if (nameOps && nameOps.length) { %>
 <div class="panel">
   <h2><%- include('includes/_icon', {icon:'tag'}) %> <%= t('tx.nameOps') %></h2>
-  <table>
-    <thead><tr><th><%= t('tx.vout') %></th><th><%= t('tx.operation') %></th><th><%= t('tx.name') %></th><th><%= t('tx.value') %></th></tr></thead>
-    <tbody>
-      <% nameOps.forEach(o => { %>
-      <tr>
-        <td><%= o.vout %></td>
-        <td><%- include('includes/_op-pill', { op: o.displayOp || o.op }) %></td>
-        <td class="mono"><% if (o.name) { %><a href="/name/<%= encodeURIComponent(o.name) %>"><%= o.name %></a><% } else { %><span class="muted"><%= t('ops.hiddenName') %></span><% } %></td>
-        <td class="mono" style="max-width:280px;word-break:break-all;white-space:pre-wrap"><%= String(o.value||'') %></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <% nameOps.forEach((o, i) => { %>
+  <% const ov = renderValue({ value: o.value }); %>
+  <% const oid = 'tx-nv-' + i; %>
+  <% const ovToggle = ov && ((ov.table && ov.table.length) || ov.kind === 'json') && o.value; %>
+  <div class="tx-nameop">
+    <div class="tx-nameop-head">
+      <%- include('includes/_op-pill', { op: o.displayOp || o.op }) %>
+      <% if (o.name) { %><a href="/name/<%= encodeURIComponent(o.name) %>" class="mono"><%= o.name %></a><% } else { %><span class="muted"><%= t('ops.hiddenName') %></span><% } %>
+      <% if (o.vout != null) { %><span class="dim"><%= t('tx.vout') %> <%= o.vout %></span><% } %>
+      <% if (ovToggle) { %>
+      <%- include('includes/_value-modes', { wrapId: oid }) %>
+      <% } %>
+    </div>
+    <% if (ov && ov.kind !== 'empty') { %>
+    <%- include('includes/_value', { decoded: ov, compact: true, fallback: o.value || '', wrapId: oid, headingToggle: true }) %>
+    <% } %>
+  </div>
+  <% }) %>
 </div>
 <% } %>
 
 <% if (tx) { %>
+  <div class="panel">
+    <h2><%- include('includes/_icon', {icon:'box'}) %> <%= t('tx.inputs') %></h2>
+    <table>
+      <thead><tr><th><%= t('tx.index') %></th><th><%= t('tx.outpoint') %></th></tr></thead>
+      <tbody>
+        <% (tx.vin||[]).forEach((v,i) => { %>
+        <tr>
+          <td><%= i %></td>
+          <td>
+            <% if (v.coinbase != null || (v.txid && String(v.txid) === '0000000000000000000000000000000000000000000000000000000000000000')) { %>
+            <span class="pill gray"><%= t('tx.coinbase') %></span>
+            <% } else if (v.txid) { %>
+            <a href="/tx/<%= v.txid %>" class="mono" title="<%= v.txid %>"><%= shortId(v.txid, 12, 8) %></a><span class="dim">:<%= v.vout %></span>
+            <% } else { %>—<% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <div class="panel">
     <h2><%- include('includes/_icon', {icon:'box'}) %> <%= t('tx.outputs') %></h2>
     <table>
@@ -54,7 +80,7 @@
         <% (tx.vout||[]).forEach((o,i) => { %>
         <tr>
           <td><%= i %></td>
-          <td class="mono"><%= o.value %></td>
+          <td class="mono"><%= fmtNmc(o.value) %></td>
           <td class="mono" style="font-size:11px"><% const addr = (o.scriptPubKey && (o.scriptPubKey.address || (o.scriptPubKey.addresses && o.scriptPubKey.addresses[0]))) || ''; %><% if (addr) { %><a href="/address/<%= encodeURIComponent(addr) %>"><%= addr %></a><% } else { %>—<% } %></td>
           <td class="mono" style="font-size:11px;color:var(--dim)"><%= o.scriptPubKey.type %></td>
         </tr>

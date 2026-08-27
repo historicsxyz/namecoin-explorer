@@ -17,7 +17,9 @@ UI: server-rendered EJS, `public/css/explorer.css` (zinc neutrals, Namecoin blue
 ```
 app.js
 ├─ env, open SQLite, start ingest, listen on NMC_BIND:NMC_EXPLORER_PORT
-├─ middleware     ?lang= / Accept-Language, SEO (title/canonical/OG), tip + name count
+├─ middleware     timeout, static Cache-Control, per-IP rate limit,
+│                 HTML TTL cache (/name, /stats), ?lang= / Accept-Language,
+│                 SEO, tip + name count
 └─ routes
    ├─ /                  explorer home (headers, namespaces, recent / expiring)
    ├─ /names             registry + FTS5 search
@@ -58,7 +60,7 @@ Do not invent “available / not found”. Index HTML and JSON are a degraded vi
 HTTP JSON-RPC to namecoind.
 
 - Cookie auth (`NMC_COOKIE_PATH`); user/pass fallback. Re-reads the cookie on HTTP 401.
-- Small in-flight limiter so ingest and HTTP can overlap.
+- Small in-flight limiter so ingest and HTTP can overlap (`concurrency` 4, wait queue capped at 64; extra callers get `RPC_BUSY`).
 - Name RPCs always send `{ nameEncoding: "hex", valueEncoding: "hex" }` (Core #246). `name_show` sets `allowExpired: true`. Decode at the RPC boundary. `ismine` is stripped and never stored.
 - Errors are `RpcError`. The client never fabricates “not found / available”.
 
@@ -76,16 +78,22 @@ Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Au
 
 `opsForTxids` is the lookup behind `/tx` name-op counts and `/tx/:txid` cache fallback.
 
+### `lib/ttlcache.js` / `lib/httpcache.js` / `lib/ratelimit.js`
+
+In-process (no Redis). Bounded TTL LRU for HTML (`/name/*`, `/stats`), `gatherStats`, and `loadNameRecord`. Stale-while-revalidate on payloads; HTML hits skip SQLite and RPC. Ingest invalidates stats always, only the names in that block, and flushes every store on reorg.
+
+`Cache-Control` per route class, weak ETags + 304 on cached HTML, per-IP token buckets on `/api/search`, `/api/*`, `/stats`. Request timeout 60s (`NMC_REQUEST_TIMEOUT_MS`).
+
 ### `lib/ingest.js`
 
 Replaces the old 50k-row `name_scan` dump.
 
-1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names.
+1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names. After each block, `onUpdate({ names })` invalidates HTTP caches for those names; a reorg settle flushes every store.
 2. **First run** — rewind ~36,000 blocks (one expiry window). `NMC_INGEST_FROM=0` or `genesis` starts at height 0 (`txindex=1`; slow; one writer).
 3. **Bootstrap** — paged `name_scan` at 500 names/page with a short pause so `cs_main` is not held. Then drop names whose `last_sync` predates that pass.
 4. **Lazy history** — `/name/:name` with no `name_ops` rows calls `name_history` once and stores the txs. Needs `txindex=1` and `namehistory=1`. Skipped when RPC already failed.
 
-Polls `getblockchaininfo` every ~10s. Optional `NMC_ZMQ_HASHBLOCK` ticks on `hashblock`. Catch-up of thousands of blocks still uses the height loop. Missing `zeromq` or a bad URL fails startup. HTTP pages do not scan blocks.
+Polls `getblockchaininfo` every ~10s. Optional `NMC_ZMQ_HASHBLOCK` ticks on `hashblock`. Catch-up of thousands of blocks still uses the height loop. Missing `zeromq` or a bad URL fails startup. HTTP pages do not scan blocks. `onUpdate` is a side channel for HTTP caches; ingest never depends on it.
 
 ### `lib/names.js` / `lib/txops.js` / `lib/expiry.js`
 

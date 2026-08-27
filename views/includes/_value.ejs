@@ -1,8 +1,56 @@
 <% const isCompact = typeof compact !== 'undefined' && compact; %>
-<div class="value-wrap<%= isCompact ? ' compact' : '' %>">
-<% if (decoded && decoded.raw) { %>
-  <pre class="value"><%= decoded.raw %></pre>
-<% } else if (typeof fallback !== 'undefined' && fallback) { %>
-  <pre class="value"><%= fallback %></pre>
+<% const table = decoded && Array.isArray(decoded.table) ? decoded.table : []; %>
+<% const chainRaw = (typeof fallback !== 'undefined' && fallback != null && fallback !== '') ? String(fallback) : ((decoded && decoded.raw) || ''); %>
+<% const pretty = decoded && decoded.raw ? String(decoded.raw) : ''; %>
+<% const canToggle = (table.length > 0 || (decoded && decoded.kind === 'json')) && !!chainRaw; %>
+<% const vid = (typeof wrapId !== 'undefined' && wrapId) ? wrapId : ('vw-' + Math.random().toString(36).slice(2, 9)); %>
+<% const modesInHeading = typeof headingToggle !== 'undefined' && headingToggle; %>
+<div class="value-wrap<%= isCompact ? ' compact' : '' %><%= canToggle ? ' has-modes' : '' %>"<% if (canToggle) { %> id="<%= vid %>" data-value-wrap data-mode="decoded"<% } %>>
+<% if (canToggle && !modesInHeading) { %>
+  <%- include('_value-modes', { wrapId: vid }) %>
+<% } %>
+<% if (canToggle) { %>
+  <div class="value-pane" data-value-pane="decoded">
+    <% if (table.length) { %>
+  <dl class="value-fields">
+    <% table.forEach(row => { %>
+    <div class="value-row">
+      <dt><%= row.label %></dt>
+      <dd>
+        <% if (row.isObject) { %>
+        <pre class="value value-nested"><%= row.value %></pre>
+        <% } else { %>
+        <span class="mono"><%= row.value %></span>
+        <% } %>
+      </dd>
+    </div>
+    <% }) %>
+  </dl>
+    <% } else if (pretty) { %>
+  <pre class="value"><%= pretty %></pre>
+    <% } %>
+  </div>
+  <div class="value-pane" data-value-pane="raw">
+    <pre class="value"><%= chainRaw %></pre>
+  </div>
+<% } else if (table.length) { %>
+  <dl class="value-fields">
+    <% table.forEach(row => { %>
+    <div class="value-row">
+      <dt><%= row.label %></dt>
+      <dd>
+        <% if (row.isObject) { %>
+        <pre class="value value-nested"><%= row.value %></pre>
+        <% } else { %>
+        <span class="mono"><%= row.value %></span>
+        <% } %>
+      </dd>
+    </div>
+    <% }) %>
+  </dl>
+<% } else if (pretty) { %>
+  <pre class="value"><%= pretty %></pre>
+<% } else if (chainRaw) { %>
+  <pre class="value"><%= chainRaw %></pre>
 <% } %>
 </div>

@@ -1,18 +1,54 @@
 <div class="topbar"><h1><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('txs.title') %></h1></div>
 
+<% const txOps = typeof ops !== 'undefined' ? ops : null; %>
+<% const txRange = typeof range !== 'undefined' ? range : ''; %>
+<% const txFiltered = !!(txOps || txRange || (typeof opsInvalid !== 'undefined' && opsInvalid) || (typeof rangeInvalid !== 'undefined' && rangeInvalid)); %>
+
 <div class="filterbar">
   <form action="/tx" method="get">
     <input class="blocks-q" type="text" name="q" value="<%= q||'' %>" placeholder="<%= t('txs.lookupPlaceholder') %>" spellcheck="false" autocomplete="off">
-    <button class="btn" type="submit"><%= t('txs.lookup') %></button>
+    <select name="ops" onchange="this.form.submit()">
+      <option value=""><%= t('txs.all') %></option>
+      <option value="with" <%= txOps==='with'?'selected':'' %>><%= t('txs.withOps') %></option>
+      <option value="none" <%= txOps==='none'?'selected':'' %>><%= t('txs.noOps') %></option>
+      <option value="busy" <%= txOps==='busy'?'selected':'' %>><%= t('txs.busyOps') %></option>
+      <option value="NAME_FIRSTUPDATE" <%= txOps==='NAME_FIRSTUPDATE'?'selected':'' %>><%= t('txs.opsRegisters') %></option>
+      <option value="NAME_UPDATE" <%= txOps==='NAME_UPDATE'?'selected':'' %>><%= t('txs.opsUpdates') %></option>
+      <option value="NAME_NEW" <%= txOps==='NAME_NEW'?'selected':'' %>><%= t('txs.opsCommitments') %></option>
+    </select>
+    <select name="range" onchange="this.form.submit()">
+      <option value=""><%= t('txs.anyTime') %></option>
+      <option value="1h" <%= txRange==='1h'?'selected':'' %>><%= t('txs.range1h') %></option>
+      <option value="6h" <%= txRange==='6h'?'selected':'' %>><%= t('txs.range6h') %></option>
+      <option value="24h" <%= txRange==='24h'?'selected':'' %>><%= t('txs.range24h') %></option>
+      <option value="7d" <%= txRange==='7d'?'selected':'' %>><%= t('txs.range7d') %></option>
+    </select>
+    <button class="btn" type="submit"><%= t('txs.filter') %></button>
+    <% if (txFiltered || q) { %>
+      <a class="btn btn-ghost" href="/tx"><%= t('txs.clear') %></a>
+    <% } %>
   </form>
+  <% if (txFiltered && typeof matching !== 'undefined') { %>
+  <div class="filterbar-meta">
+    <span><%= t('txs.matching', { n: nfmt(matching) }) %></span>
+  </div>
+  <% } %>
 </div>
 
 <% if (invalid) { %><div class="error"><%= t('txs.invalid') %></div><% } %>
 
 <% if (usedFallback && fallback && fallback.length) { %>
   <p class="muted"><%= t('txs.fallbackNote') %></p>
+<% } else if (typeof indexRange !== 'undefined' && indexRange) { %>
+  <p class="muted"><%= t('txs.indexRangeNote') %></p>
 <% } else if (typeof partialFallback !== 'undefined' && partialFallback) { %>
   <p class="muted"><%= t('txs.partialNote') %></p>
+<% } %>
+<% if (typeof rangeLimited !== 'undefined' && rangeLimited) { %>
+  <p class="muted"><%= t('txs.rangeNote') %></p>
+<% } %>
+<% if (typeof noneNeedsRpc !== 'undefined' && noneNeedsRpc) { %>
+  <p class="muted"><%= t('txs.noneNeedsRpc') %></p>
 <% } %>
 
 <% if (groups && groups.length) { %>
@@ -41,18 +77,19 @@
   <div class="panel">
     <h2><%- include('includes/_icon', {icon:'file-text'}) %> <%= t('txs.recent') %></h2>
     <table>
-      <thead><tr><th><%= t('txs.txid') %></th><th><%= t('home.height') %></th><th><%= t('blocks.nameOps') %></th></tr></thead>
+      <thead><tr><th><%= t('txs.txid') %></th><th><%= t('home.height') %></th><th><%= t('txs.time') %></th><th><%= t('blocks.nameOps') %></th></tr></thead>
       <tbody>
         <% fallback.forEach(o => { %>
         <tr class="row-link" data-href="/tx/<%= o.txid %>">
           <td class="mono"><a class="row-link-hit" href="/tx/<%= o.txid %>" title="<%= o.txid %>"><%= o.txid %></a></td>
           <td><% if (o.height != null) { %><a href="/block/<%= o.height %>"><%= nfmt(o.height) %></a><% } else { %>—<% } %></td>
-          <td><% const n = ((typeof opsByTxid !== 'undefined' && opsByTxid && opsByTxid[String(o.txid).toLowerCase()]) || []).length; %><%= n ? nfmt(n) : '—' %></td>
+          <td class="mono" style="font-size:11px;color:var(--dim)"><% if (o.time) { %><%- include('includes/_when', { unix: o.time }) %><% } else { %>—<% } %></td>
+          <td><% const n = o.nameOps != null ? Number(o.nameOps) : ((typeof opsByTxid !== 'undefined' && opsByTxid && opsByTxid[String(o.txid).toLowerCase()]) || []).length; %><%= n ? nfmt(n) : '—' %></td>
         </tr>
         <% }) %>
       </tbody>
     </table>
   </div>
 <% } else { %>
-  <div class="panel"><p class="muted"><%= t('txs.empty') %></p></div>
+  <div class="panel"><p class="muted"><%= txFiltered ? t('txs.noMatch') : t('txs.empty') %></p></div>
 <% } %>

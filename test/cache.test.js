@@ -190,6 +190,8 @@ describe('NameCache', () => {
     assert.equal(cache.countHeaders({ ops: 'none' }), 20);
     assert.equal(cache.pageHeaders({ ops: 'NAME_UPDATE', limit: 3 })[0].height, 25);
     assert.equal(cache.pageHeaders({ hashPrefix: 'h2', limit: 20 }).map((b) => b.height).join(','), '25,24,23,22,21,20,2');
+    assert.equal(cache.countHeaders({ since: 20 }), 6);
+    assert.equal(cache.pageHeaders({ since: 20, ops: 'with', limit: 10 }).map((b) => b.height).join(','), '25,20');
     cache.close();
   });
 
@@ -214,6 +216,40 @@ describe('NameCache', () => {
     assert.equal(cache.countHeaders({ ops: 'busy' }), 1);
     assert.equal(cache.pageHeaders({ ops: 'busy', limit: 5 })[0].height, 3);
     assert.equal(cache.countHeaders({ maxHeight: 20, ops: 'with' }), 3);
+    cache.close();
+  });
+
+  it('lists name-op txids grouped by count and time', () => {
+    const cache = new NameCache(':memory:');
+    cache.insertBlock({
+      header: { height: 1, hash: 'h1', time: 100, prev: 'p', ntx: 1, merkle: 'm' },
+      ops: [{
+        txid: 'one', vout: 0, op: 'NAME_UPDATE', name: 'd/a',
+        nameHex: Buffer.from('d/a').toString('hex'), value: '{}', address: 'A',
+      }],
+      tipHeight: 1,
+    });
+    cache.insertBlock({
+      header: { height: 2, hash: 'h2', time: 200, prev: 'h1', ntx: 1, merkle: 'm' },
+      ops: [
+        {
+          txid: 'two', vout: 0, op: 'NAME_UPDATE', name: 'd/b',
+          nameHex: Buffer.from('d/b').toString('hex'), value: '{}', address: 'A',
+        },
+        {
+          txid: 'two', vout: 1, op: 'NAME_UPDATE', name: 'd/c',
+          nameHex: Buffer.from('d/c').toString('hex'), value: '{}', address: 'A',
+        },
+      ],
+      tipHeight: 2,
+    });
+    const busy = cache.recentNameOpTxs({ minOps: 2, limit: 10 });
+    assert.equal(busy.length, 1);
+    assert.equal(busy[0].txid, 'two');
+    assert.equal(busy[0].nameOps, 2);
+    const recent = cache.recentNameOpTxs({ since: 150, limit: 10 });
+    assert.equal(recent.length, 1);
+    assert.equal(recent[0].txid, 'two');
     cache.close();
   });
 

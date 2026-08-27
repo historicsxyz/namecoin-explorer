@@ -80,7 +80,6 @@
     </div>
     <% if (stats.priceChart && stats.priceChart.svg) { %>
       <div class="chart-wrap"><%- stats.priceChart.svg %></div>
-      <% if (stats.priceAxis) { %><div class="chart-axis"><span><%= stats.priceAxis.span %></span><span><%= stats.priceAxis.range %></span></div><% } %>
     <% } else { %>
       <p class="chart-empty"><%= t('stats.noPriceSeries') %></p>
     <% } %>
@@ -92,7 +91,6 @@
     </h2>
     <% if (stats.hrChart && stats.hrChart.svg) { %>
       <div class="chart-wrap"><%- stats.hrChart.svg %></div>
-      <% if (stats.hrAxis) { %><div class="chart-axis"><span><%= stats.hrAxis.span %></span><span><%= stats.hrAxis.range %></span></div><% } %>
     <% } else { %>
       <p class="chart-empty"><%= t('stats.noHashrateSeries') %></p>
     <% } %>
@@ -108,7 +106,6 @@
     <p class="chart-lead"><%= t('stats.opsLead') %></p>
     <% if (stats.opsChart && stats.opsChart.svg) { %>
       <div class="chart-wrap"><%- stats.opsChart.svg %></div>
-      <% if (stats.opsAxis) { %><div class="chart-axis"><span><%= stats.opsAxis.span %></span><span><%= stats.opsAxis.range %></span></div><% } %>
     <% } else { %>
       <p class="chart-empty"><%= t('stats.noOpsSeries') %></p>
     <% } %>

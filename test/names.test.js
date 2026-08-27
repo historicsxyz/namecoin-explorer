@@ -2,7 +2,7 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
-const { classifyValue, renderValue } = require('../lib/names');
+const { classifyValue, renderValue, valuePreview } = require('../lib/names');
 
 describe('classifyValue / renderValue', () => {
   it('keeps DNS map objects as a json table', () => {
@@ -58,6 +58,11 @@ describe('classifyValue / renderValue', () => {
     assert.match(decoded.raw, /Church of Bitcoin/);
     assert.match(decoded.raw, /\}$/);
     assert.equal(decoded.table[0].label, 'info');
+  });
+
+  it('previews decoded fields instead of raw JSON for lists', () => {
+    assert.equal(valuePreview('{"ip":"127.0.0.1","tor":"abc.onion"}'), 'ip: 127.0.0.1 · tor: abc.onion');
+    assert.equal(valuePreview('reserved'), 'reserved');
   });
 });
 

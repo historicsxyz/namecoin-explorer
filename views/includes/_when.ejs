@@ -1,0 +1,3 @@
+<% const ts = Number(unix); const rel = (typeof relDur === 'function') ? relDur(ts) : null; %>
+<% if (rel) { %><%= t(rel.future ? 'time.in' : 'time.ago', { t: rel.t }) %><span class="dim"> · </span><% } %>
+<%= (typeof fmtUtc === 'function' && fmtUtc(ts, lang)) || (Number.isFinite(ts) ? new Date(ts * 1000).toUTCString() : '—') %>
