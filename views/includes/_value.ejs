@@ -5,7 +5,7 @@
 <% const canToggle = (table.length > 0 || (decoded && decoded.kind === 'json')) && !!chainRaw; %>
 <% const vid = (typeof wrapId !== 'undefined' && wrapId) ? wrapId : ('vw-' + Math.random().toString(36).slice(2, 9)); %>
 <% const modesInHeading = typeof headingToggle !== 'undefined' && headingToggle; %>
-<div class="value-wrap<%= isCompact ? ' compact' : '' %><%= canToggle ? ' has-modes' : '' %>"<% if (canToggle) { %> id="<%= vid %>" data-value-wrap data-mode="decoded"<% } %>>
+<div class="value-wrap<%= isCompact ? ' compact' : '' %><%= canToggle ? ' has-modes' : '' %>"<% if (canToggle) { %> id="<%= vid %>" data-value-wrap data-mode="raw"<% } %>>
 <% if (canToggle && !modesInHeading) { %>
   <%- include('_value-modes', { wrapId: vid }) %>
 <% } %>

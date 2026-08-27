@@ -173,7 +173,7 @@ describe('EJS templates', { skip: !ejs && 'ejs not installed (npm install)' }, (
     assert.doesNotMatch(html, /name\.noRecord/);
   });
 
-  it('name value defaults to a field table and keeps the on-chain raw behind a toggle', () => {
+  it('name value defaults to on-chain raw and keeps decoded fields behind a toggle', () => {
     const html = ejs.render(fs.readFileSync(path.join(views, 'includes/_value.ejs'), 'utf8'), {
       ...locals,
       fallback: '{"ip":"1.2.3.4"}',
@@ -190,7 +190,7 @@ describe('EJS templates', { skip: !ejs && 'ejs not installed (npm install)' }, (
     assert.match(html, /1\.2\.3\.4/);
     assert.match(html, /name\.decoded/);
     assert.match(html, /name\.raw/);
-    assert.match(html, /data-mode="decoded"/);
+    assert.match(html, /data-mode="raw"/);
     assert.match(html, /data-value-pane="raw"/);
     assert.match(html, /data-value-pane="raw"[\s\S]*\{&#34;ip&#34;:&#34;1\.2\.3\.4&#34;\}/);
     assert.doesNotMatch(html, /<details/);
