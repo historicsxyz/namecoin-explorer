@@ -18,7 +18,8 @@ UI: server-rendered EJS, `public/css/explorer.css` (zinc neutrals, Namecoin blue
 app.js
 ├─ env, open SQLite, start ingest, listen on NMC_BIND:NMC_EXPLORER_PORT
 ├─ middleware     timeout, static Cache-Control, per-IP rate limit,
-│                 HTML TTL cache (/name, /stats), ?lang= / Accept-Language,
+│                 HTML TTL cache (/, /names, /namespaces, /namespace/:ns,
+│                 /name, /stats), ?lang= / Accept-Language,
 │                 SEO, tip + name count
 └─ routes
    ├─ /                  explorer home (headers, namespaces, recent / expiring)
@@ -68,9 +69,13 @@ HTTP JSON-RPC to namecoind.
 
 SQLite WAL. One writer (ingest), HTTP only reads.
 
-Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `meta`. Never load the full registry into a JS array.
+Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `ops_daily`, `meta`. Never load the full registry into a JS array.
 
-If `better-sqlite3` has no native build (e.g. some Windows/Node combos), fall back to `node:sqlite` (Node ≥ 22.5). On Node 20 a failed native load is fatal — rebuild with the same Node binary the process uses.
+Pager tuning on open (file and memory): WAL, `synchronous=NORMAL`, `busy_timeout=5000`, foreign keys, `cache_size` 384MB, `mmap_size` 1GB, `wal_autocheckpoint` 4000 pages (~16MB). Default autocheckpoint (4MB) fsyncs too often on a multi-GB index and stalls the HTTP thread.
+
+`opsPerDay` reads `ops_daily`, maintained in `insertBlock` / `insertNameOps` / `deleteAbove`. First use after upgrade backfills ~400 days from `name_ops` (not the full table) and sets `meta.ops_daily_ok` so a process restart does not scan again.
+
+If `better-sqlite3` has no native build (e.g. some Windows/Node combos), fall back to `node:sqlite` (Node ≥ 22.5). Both backends expose `.pragma` (native vs `exec('PRAGMA …')`). On Node 20 a failed native load is fatal — rebuild with the same Node binary the process uses.
 
 Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Autocomplete prefers prefix `MATCH` (`term*`), then `LIKE`. Cap 30. No Redis/Elasticsearch.
 
@@ -80,7 +85,7 @@ Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Au
 
 ### `lib/ttlcache.js` / `lib/httpcache.js` / `lib/ratelimit.js`
 
-In-process (no Redis). Bounded TTL LRU for HTML (`/name/*`, `/stats`), `gatherStats`, and `loadNameRecord`. Stale-while-revalidate on payloads; HTML hits skip SQLite and RPC. Ingest invalidates stats always, only the names in that block, and flushes every store on reorg.
+In-process (no Redis). Bounded TTL LRU for HTML (`/`, `/names`, `/namespaces`, `/namespace/:ns`, `/name/*`, `/stats`), `gatherStats`, and `loadNameRecord`. Concurrent HTML misses share one render (`shareLoad`). Stale-while-revalidate on payloads; HTML hits skip SQLite and RPC. Ingest invalidates stats and the list/home HTML prefixes on every block, only the names in that block for `/name/*`, and flushes every store on reorg. Payload stats TTL (60s) only bounds work between blocks — a new block still drops the cache.
 
 `Cache-Control` per route class, weak ETags + 304 on cached HTML, per-IP token buckets on `/api/search`, `/api/*`, `/stats`. Request timeout 60s (`NMC_REQUEST_TIMEOUT_MS`).
 
@@ -88,7 +93,7 @@ In-process (no Redis). Bounded TTL LRU for HTML (`/name/*`, `/stats`), `gatherSt
 
 Replaces the old 50k-row `name_scan` dump.
 
-1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names. After each block, `onUpdate({ names })` invalidates HTTP caches for those names; a reorg settle flushes every store.
+1. **Follow** — from `meta.tip_height+1` to tip: `getblock(hash, 2)`, extract name ops, commit per block. Reorg: walk to a common ancestor, delete headers/ops above it, rebuild affected names. After each block, `onUpdate({ names })` invalidates stats, home/list HTML, and `/name` keys for names in that block; a reorg settle flushes every store.
 2. **First run** — rewind ~36,000 blocks (one expiry window). `NMC_INGEST_FROM=0` or `genesis` starts at height 0 (`txindex=1`; slow; one writer).
 3. **Bootstrap** — paged `name_scan` at 500 names/page with a short pause so `cs_main` is not held. Then drop names whose `last_sync` predates that pass.
 4. **Lazy history** — `/name/:name` with no `name_ops` rows calls `name_history` once and stores the txs. Needs `txindex=1` and `namehistory=1`. Skipped when RPC already failed.

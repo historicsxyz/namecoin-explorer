@@ -2,9 +2,18 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { NameCache, sqliteBackendError } = require('../lib/cache');
 const { inferUpdateKind } = require('../lib/names');
 const { HEX_OPTS, SHOW_OPTS } = require('../lib/rpc');
+
+function pragmaValue(db, name) {
+  const row = db.prepare('PRAGMA ' + name).get();
+  if (!row) return undefined;
+  return row[name] != null ? row[name] : Object.values(row)[0];
+}
 
 describe('rpc encodings', () => {
   it('sends Core nameEncoding / valueEncoding hex options', () => {
@@ -27,6 +36,23 @@ describe('sqliteBackendError', () => {
 });
 
 describe('NameCache', () => {
+  it('tunes pager cache, mmap, and WAL checkpoint on a file database', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nmc-pragma-'));
+    const file = path.join(dir, 'c.db');
+    const cache = new NameCache(file);
+    try {
+      assert.equal(Number(pragmaValue(cache.db, 'cache_size')), -393216);
+      assert.equal(Number(pragmaValue(cache.db, 'wal_autocheckpoint')), 4000);
+      assert.match(String(pragmaValue(cache.db, 'journal_mode')), /wal/i);
+      const mmap = Number(pragmaValue(cache.db, 'mmap_size'));
+      assert.ok(Number.isFinite(mmap));
+      assert.ok(mmap === 0 || mmap >= 1073741824);
+    } finally {
+      cache.close();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('upserts a name and expires it when the tip advances', () => {
     const cache = new NameCache(':memory:');
     cache.upsertNameRecord({
@@ -74,6 +100,9 @@ describe('NameCache', () => {
     assert.equal(atHeight.length, 1);
     assert.equal(atHeight[0].op, 'NAME_FIRSTUPDATE');
     assert.equal(cache.opsAtHeight(10, { hideCommitments: false }).length, 2);
+    const days = cache.opsPerDay(30);
+    assert.equal(days.length, 1);
+    assert.equal(Number(days[0].n), 1);
     cache.close();
   });
 

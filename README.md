@@ -138,7 +138,7 @@ curl -s http://127.0.0.1:3100/api/operations
 Browser ──HTTP──► Explorer (Express, 127.0.0.1:3100)
                     ├─ lib/rpc.js         JSON-RPC (cookie, hex encodings)
                     ├─ lib/ingest.js      block follow + paged name_scan
-                    ├─ lib/cache.js       SQLite WAL (names, name_ops, headers, FTS5)
+                    ├─ lib/cache.js       SQLite WAL (names, name_ops, headers, ops_daily, FTS5)
                     ├─ lib/search.js      header lookup
                     ├─ lib/txops.js       NAME_NEW / FIRSTUPDATE / UPDATE
                     ├─ lib/names.js       values + TRANSFER / RENEW inference

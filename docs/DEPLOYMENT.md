@@ -117,7 +117,9 @@ The following applies to `/etc/caddy/Caddyfile` and `/etc/systemd/system/namecoi
 | JSON API (except health / mempool) | `public, max-age=15, stale-while-revalidate=45` |
 | `/health`, `/api/health`, `*/pending` | `no-store` |
 
-If you add a CDN in front of Caddy, honour `ETag` / `If-None-Match` (304) and `Vary: Accept-Language` on HTML. Do not force a long `max-age` on `/name/*` or `/api/*` at the proxy — a trending name must still revalidate so ingest updates show up within a block.
+If you add a CDN in front of Caddy, honour `ETag` / `If-None-Match` (304) and `Vary: Accept-Language` on HTML. Do not force a long `max-age` on `/`, `/names`, `/name/*`, or `/api/*` at the proxy — a new block must still revalidate so ingest updates show up within a block.
+
+The process also caches those HTML landings in memory (tens of seconds, dropped when a block lands). Expect roughly **384MB extra RSS** for the SQLite pager (`cache_size`) plus mmap on a multi-GB `cache.db`. That is intentional: default 16MB cache and 4MB WAL checkpoints were stalling the event loop.
 
 Optional Caddy snippet (still infra-owned): `header /css/* Cache-Control "public, max-age=31536000, immutable"` is redundant with origin static headers.
 

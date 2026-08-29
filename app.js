@@ -33,6 +33,7 @@ const {
   cacheControl,
   requestTimeout,
   invalidateNameCaches,
+  parseLimit,
 } = require('./lib/httpcache');
 
 function loadEnvFile(file) {
@@ -67,8 +68,10 @@ const rpc = new NamecoinRPC({
 if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const cache = new NameCache(DB_PATH);
 const httpCaches = {
-  html: new TtlCache({ max: 400, ttlMs: 20 * 1000, swrMs: 40 * 1000 }),
-  stats: new TtlCache({ max: 32, ttlMs: 15 * 1000, swrMs: 45 * 1000 }),
+  // List pages share this LRU with /name/*; 800 leaves room for pagination keys.
+  html: new TtlCache({ max: 800, ttlMs: 20 * 1000, swrMs: 40 * 1000 }),
+  // Freshness is ingest invalidation (every block). TTL only bounds work between blocks.
+  stats: new TtlCache({ max: 32, ttlMs: 60 * 1000, swrMs: 60 * 1000 }),
   names: new TtlCache({ max: 500, ttlMs: 20 * 1000, swrMs: 60 * 1000 }),
 };
 const ingest = new IngestService(rpc, cache, {
@@ -242,7 +245,7 @@ app.get('/og', (req, res) => {
 app.get('/names', async (req, res) => {
   res.locals.page = 'names';
   const { limit = 50, start = '', ns = null, status = null, q = null } = req.query;
-  const cap = Math.min(Number(limit) || 50, 50);
+  const cap = parseLimit(limit, 50, 50);
   const startKey = String(start || '').slice(0, 255);
   let rows = [], total = 0;
   try {

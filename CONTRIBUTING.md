@@ -30,9 +30,9 @@ app.js                 boot, locals, home, /names, /name, /health
 lib/
   rpc.js               JSON-RPC (cookie, hex encodings, concurrency + wait cap)
   ingest.js            block follow + paged name_scan
-  cache.js             SQLite WAL + FTS5
+  cache.js             SQLite WAL + FTS5 + ops_daily + pager pragmas
   ttlcache.js          in-process TTL LRU (HTML / stats / name payloads)
-  httpcache.js         HTML cache, Cache-Control, request timeout
+  httpcache.js         HTML cache keys, invalidation, Cache-Control, timeout
   ratelimit.js         per-IP token bucket
   search.js            header lookup (name / height / tx / address)
   seo.js               titles, canonical, OG, sitemap

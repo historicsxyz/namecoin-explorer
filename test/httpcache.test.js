@@ -10,6 +10,7 @@ const {
   invalidateNameCaches,
   attachHtmlCache,
   cacheControl,
+  parseLimit,
 } = require('../lib/httpcache');
 
 function sleep(ms) {
@@ -79,10 +80,22 @@ describe('TtlCache', () => {
     await pending;
     assert.equal(c.get('p|d/our').hit, false);
   });
+
+  it('shareLoad coalesces waiters and skips set after invalidate', async () => {
+    const c = new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 });
+    const lead = c.shareLoad('h|en');
+    assert.equal(lead.leader, true);
+    const wait = c.shareLoad('h|en');
+    assert.equal(wait.leader, false);
+    c.invalidate('h|');
+    lead.finish({ body: 'home' });
+    assert.deepEqual(await wait.promise, { body: 'home' });
+    assert.equal(c.get('h|en').hit, false);
+  });
 });
 
 describe('httpcache helpers', () => {
-  it('keys stats and name pages by lang and range', () => {
+  it('keys stats, home, names, namespace, and name pages', () => {
     const stats = htmlCacheKey({
       method: 'GET',
       path: '/stats',
@@ -90,6 +103,30 @@ describe('httpcache helpers', () => {
       get: () => 'en',
     });
     assert.equal(stats, 's|en|7d|1m|3m');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/', query: {}, get: () => 'en',
+    }), 'h|en');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/names', query: {}, get: () => 'en',
+    }), 'l|en||||50|');
+    assert.equal(htmlCacheKey({
+      method: 'GET',
+      path: '/names',
+      query: { ns: 'd', status: 'live', start: 'd/aa', limit: '20', q: 'bit' },
+      get: () => 'de',
+    }), 'l|de|d|live|d/aa|20|bit');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/namespaces', query: {}, get: () => 'en',
+    }), 'm|en');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/namespace/d', query: {}, get: () => 'en',
+    }), 'k|en|d|||50');
+    assert.equal(htmlCacheKey({
+      method: 'GET',
+      path: '/namespace/id',
+      query: { status: 'expired', start: 'id/z', limit: '80' },
+      get: () => 'en',
+    }), 'k|en|id|expired|id/z|80');
     const name = htmlCacheKey({
       method: 'GET',
       path: '/name/d%2Four',
@@ -97,15 +134,32 @@ describe('httpcache helpers', () => {
       get: () => 'de-DE,de;q=0.9',
     });
     assert.equal(name, 'n|de|d/our');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/blocks', query: {}, get: () => 'en',
+    }), null);
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/names', query: { limit: '999' }, get: () => 'en',
+    }), 'l|en||||50|');
+  });
+
+  it('parseLimit matches the names and namespace route caps', () => {
+    assert.equal(parseLimit('999', 50, 50), 50);
+    assert.equal(parseLimit('80', 50, 100), 80);
+    assert.equal(parseLimit('', 50, 50), 50);
+    assert.equal(parseLimit(undefined, 20, 50), 20);
   });
 
   it('invalidates stats always and only the named HTML/payload keys', () => {
     const caches = {
-      html: new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 }),
+      html: new TtlCache({ max: 16, ttlMs: 60_000, swrMs: 0 }),
       stats: new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 }),
       names: new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 }),
     };
     caches.html.set('s|en|1y|1y|1y', { body: 'stats' });
+    caches.html.set('h|en', { body: 'home' });
+    caches.html.set('l|en||||50|', { body: 'names' });
+    caches.html.set('m|en', { body: 'namespaces' });
+    caches.html.set('k|en|d|||50', { body: 'ns' });
     caches.html.set('n|en|d/our', { body: 'our' });
     caches.html.set('n|en|d/bit', { body: 'bit' });
     caches.stats.set('st|1y|1y|1y', { ok: 1 });
@@ -114,6 +168,10 @@ describe('httpcache helpers', () => {
     invalidateNameCaches(caches, ['d/our']);
     assert.equal(caches.stats.size, 0);
     assert.equal(caches.html.get('s|en|1y|1y|1y').hit, false);
+    assert.equal(caches.html.get('h|en').hit, false);
+    assert.equal(caches.html.get('l|en||||50|').hit, false);
+    assert.equal(caches.html.get('m|en').hit, false);
+    assert.equal(caches.html.get('k|en|d|||50').hit, false);
     assert.equal(caches.html.get('n|en|d/our').hit, false);
     assert.equal(caches.html.get('n|en|d/bit').hit, true);
     assert.equal(caches.names.get('p|d/our').hit, false);
@@ -165,6 +223,35 @@ describe('HTML response cache', () => {
       assert.equal(c.status, 304);
       assert.equal(renders, 1);
       assert.equal(weakEtag(bodyA), etag);
+    } finally {
+      await new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+    }
+  });
+
+  it('coalesces concurrent misses for the homepage into one render', async () => {
+    const store = new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 });
+    let renders = 0;
+    const app = express();
+    app.use(attachHtmlCache(store));
+    app.get('/', (_req, res) => {
+      renders += 1;
+      setTimeout(() => res.type('html').send('<html>home</html>'), 40);
+    });
+    const server = await new Promise((resolve) => {
+      const s = app.listen(0, '127.0.0.1', () => resolve(s));
+    });
+    const port = server.address().port;
+    try {
+      const [a, b, c] = await Promise.all([
+        fetch('http://127.0.0.1:' + port + '/'),
+        fetch('http://127.0.0.1:' + port + '/'),
+        fetch('http://127.0.0.1:' + port + '/'),
+      ]);
+      assert.equal(a.status, 200);
+      assert.equal(b.status, 200);
+      assert.equal(c.status, 200);
+      assert.equal(await a.text(), '<html>home</html>');
+      assert.equal(renders, 1);
     } finally {
       await new Promise((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
     }

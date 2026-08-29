@@ -184,6 +184,23 @@ describe('NameCache stats series', () => {
     const days = cache.opsPerDay(30);
     assert.equal(days.length, 1);
     assert.equal(days[0].n, 1);
+    cache.insertBlock({
+      header: {
+        height: 11, hash: 'h2', time: 86400 * 10 + 60, prev: 'h1', ntx: 1, merkle: 'mm', difficulty: 100,
+      },
+      ops: [{
+        txid: 'tt2', vout: 0, op: 'NAME_UPDATE', name: 'd/x',
+        nameHex: Buffer.from('d/x').toString('hex'), value: '{}', address: 'N1',
+      }],
+      tipHeight: 11,
+    });
+    const sameDay = cache.opsPerDay(30);
+    assert.equal(sameDay.length, 1);
+    assert.equal(sameDay[0].n, 2);
+    cache.deleteAbove(10);
+    const afterReorg = cache.opsPerDay(30);
+    assert.equal(afterReorg.length, 1);
+    assert.equal(afterReorg[0].n, 1);
     cache.close();
   });
 });
