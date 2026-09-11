@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<% const seo = locals.seo || { title: 'Namecoin Explorer', description: '', canonical: '', image: '/og.png', imageAlt: 'Namecoin Explorer', noindex: false, ogType: 'website', lang: typeof lang !== 'undefined' ? lang : 'en', locale: 'en_US', localeAlt: 'de_DE', themeColor: '#6787B7', hreflang: [], jsonLd: null }; %>
+<% const seo = locals.seo || { title: 'Namecoin Explorer', description: '', canonical: '', image: '/og.png', imageAlt: 'Namecoin Explorer', noindex: false, nofollow: false, ogType: 'website', lang: typeof lang !== 'undefined' ? lang : 'en', locale: 'en_US', localeAlt: 'de_DE', themeColor: '#6787B7', hreflang: [], jsonLd: null }; %>
 <html lang="<%= seo.lang || (typeof lang !== 'undefined' ? lang : 'en') %>" data-theme="light">
 <head>
   <meta charset="utf-8">
@@ -8,7 +8,7 @@
   <meta name="description" content="<%= seo.description %>">
   <meta name="application-name" content="<%= seo.siteName || 'Namecoin Explorer' %>">
   <meta name="color-scheme" content="light dark">
-  <meta name="robots" content="<%= seo.noindex ? 'noindex, nofollow' : 'index, follow' %>">
+  <meta name="robots" content="<%= seo.noindex ? (seo.nofollow ? 'noindex, nofollow' : 'noindex, follow') : 'index, follow' %>">
   <% if (seo.canonical) { %><link rel="canonical" href="<%= seo.canonical %>"><% } %>
   <% (seo.hreflang || []).forEach(function (h) { %>
   <link rel="alternate" hreflang="<%= h.lang %>" href="<%= h.href %>">
@@ -145,7 +145,7 @@
         <span aria-hidden="true">·</span>
         <a href="/og"><%= t('footer.og') %></a>
         <span aria-hidden="true">·</span>
-        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.5' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.5' %></a>
+        <a class="footer-ver" href="https://github.com/historicsxyz/namecoin-explorer/releases/tag/v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.6' %>" rel="noopener" target="_blank">v<%= typeof appVersion !== 'undefined' ? appVersion : '0.1.6' %></a>
         <span aria-hidden="true">·</span>
         <span>© <%= new Date().getFullYear() %></span>
       </nav>

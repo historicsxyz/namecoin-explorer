@@ -11,6 +11,8 @@ const {
   attachHtmlCache,
   cacheControl,
   parseLimit,
+  parsePage,
+  canonicalizeOp,
 } = require('../lib/httpcache');
 
 function sleep(ms) {
@@ -95,7 +97,7 @@ describe('TtlCache', () => {
 });
 
 describe('httpcache helpers', () => {
-  it('keys stats, home, names, namespace, and name pages', () => {
+  it('keys stats, home, names, namespace, name, and list pages', () => {
     const stats = htmlCacheKey({
       method: 'GET',
       path: '/stats',
@@ -112,9 +114,12 @@ describe('httpcache helpers', () => {
     assert.equal(htmlCacheKey({
       method: 'GET',
       path: '/names',
-      query: { ns: 'd', status: 'live', start: 'd/aa', limit: '20', q: 'bit' },
+      query: { ns: 'd', status: 'live', after: '100:d/aa', limit: '20', q: 'bit' },
       get: () => 'de',
-    }), 'l|de|d|live|d/aa|20|bit');
+    }), 'l|de|d|live|100:d/aa|20|bit');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/names', query: { start: 'd/aa' }, get: () => 'en',
+    }), 'l|en||||50|');
     assert.equal(htmlCacheKey({
       method: 'GET', path: '/namespaces', query: {}, get: () => 'en',
     }), 'm|en');
@@ -136,10 +141,28 @@ describe('httpcache helpers', () => {
     assert.equal(name, 'n|de|d/our');
     assert.equal(htmlCacheKey({
       method: 'GET', path: '/blocks', query: {}, get: () => 'en',
+    }), 'b|en|1|20|||');
+    assert.equal(htmlCacheKey({
+      method: 'GET',
+      path: '/blocks',
+      query: { page: '2', limit: '10', q: '100', ops: 'with', range: '7d' },
+      get: () => 'en',
+    }), 'b|en|2|10|100|with|7d');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/operations', query: { op: 'UPDATE' }, get: () => 'en',
+    }), 'o|en|1|20|NAME_UPDATE');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/operations/pending', query: {}, get: () => 'en',
     }), null);
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/addresses', query: { page: '3' }, get: () => 'en',
+    }), 'a|en|3|20');
     assert.equal(htmlCacheKey({
       method: 'GET', path: '/names', query: { limit: '999' }, get: () => 'en',
     }), 'l|en||||50|');
+    assert.equal(htmlCacheKey({
+      method: 'GET', path: '/block/abc', query: {}, get: () => 'en',
+    }), null);
   });
 
   it('parseLimit matches the names and namespace route caps', () => {
@@ -149,9 +172,19 @@ describe('httpcache helpers', () => {
     assert.equal(parseLimit(undefined, 20, 50), 20);
   });
 
+  it('parsePage and canonicalizeOp match the list routes', () => {
+    assert.equal(parsePage(undefined), 1);
+    assert.equal(parsePage('0'), 1);
+    assert.equal(parsePage('3'), 3);
+    assert.equal(canonicalizeOp('UPDATE'), 'NAME_UPDATE');
+    assert.equal(canonicalizeOp('first'), 'NAME_FIRSTUPDATE');
+    assert.equal(canonicalizeOp('NAME_NEW'), 'NAME_NEW');
+    assert.equal(canonicalizeOp('nope'), null);
+  });
+
   it('invalidates stats always and only the named HTML/payload keys', () => {
     const caches = {
-      html: new TtlCache({ max: 16, ttlMs: 60_000, swrMs: 0 }),
+      html: new TtlCache({ max: 24, ttlMs: 60_000, swrMs: 0 }),
       stats: new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 }),
       names: new TtlCache({ max: 8, ttlMs: 60_000, swrMs: 0 }),
     };
@@ -160,6 +193,9 @@ describe('httpcache helpers', () => {
     caches.html.set('l|en||||50|', { body: 'names' });
     caches.html.set('m|en', { body: 'namespaces' });
     caches.html.set('k|en|d|||50', { body: 'ns' });
+    caches.html.set('b|en|1|20|||', { body: 'blocks' });
+    caches.html.set('o|en|1|20|', { body: 'ops' });
+    caches.html.set('a|en|1|20', { body: 'addrs' });
     caches.html.set('n|en|d/our', { body: 'our' });
     caches.html.set('n|en|d/bit', { body: 'bit' });
     caches.stats.set('st|1y|1y|1y', { ok: 1 });
@@ -172,6 +208,9 @@ describe('httpcache helpers', () => {
     assert.equal(caches.html.get('l|en||||50|').hit, false);
     assert.equal(caches.html.get('m|en').hit, false);
     assert.equal(caches.html.get('k|en|d|||50').hit, false);
+    assert.equal(caches.html.get('b|en|1|20|||').hit, false);
+    assert.equal(caches.html.get('o|en|1|20|').hit, false);
+    assert.equal(caches.html.get('a|en|1|20').hit, false);
     assert.equal(caches.html.get('n|en|d/our').hit, false);
     assert.equal(caches.html.get('n|en|d/bit').hit, true);
     assert.equal(caches.names.get('p|d/our').hit, false);

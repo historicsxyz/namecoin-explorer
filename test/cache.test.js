@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { NameCache, sqliteBackendError } = require('../lib/cache');
+const { NameCache, sqliteBackendError, parseAfterCursor } = require('../lib/cache');
 const { inferUpdateKind } = require('../lib/names');
 const { HEX_OPTS, SHOW_OPTS } = require('../lib/rpc');
 
@@ -72,6 +72,11 @@ describe('NameCache', () => {
     assert.ok(dead.expires_in <= 0);
     assert.ok(cache.page({ status: 'expired' }).some((r) => r.name === 'd/example'));
     assert.equal(cache.expiringSoon().some((r) => r.name === 'd/example'), false);
+
+    cache.upsertNameRecord({ name: 'd/live', value: '{}', address: 'N', height: 37000 }, 37001);
+    assert.equal(cache.countLive(), 1);
+    assert.deepEqual(cache.sitemapNames(1, 50).map((r) => r.name), ['d/live']);
+    assert.deepEqual(cache.sitemapNames(2, 50), []);
     cache.close();
   });
 
@@ -118,6 +123,29 @@ describe('NameCache', () => {
     assert.ok(!names.includes('id/alice'));
     assert.ok(rows.length <= 30);
     assert.equal(cache.search('', 30).length, 0);
+    cache.close();
+  });
+
+  it('pages names by last-update height with a keyset cursor', () => {
+    const cache = new NameCache(':memory:');
+    cache.upsertNameRecord({ name: 'd/old', value: '{}', address: 'N', height: 10 }, 10);
+    cache.upsertNameRecord({ name: 'd/mid', value: '{}', address: 'N', height: 20 }, 20);
+    cache.upsertNameRecord({ name: 'd/new', value: '{}', address: 'N', height: 30 }, 30);
+    cache.upsertNameRecord({ name: 'd/also30', value: '{}', address: 'N', height: 30 }, 30);
+    cache.upsertNameRecord({ name: 'id/x', value: '{}', address: 'N', height: 25 }, 25);
+    const first = cache.page({ sort: 'updated', limit: 2 });
+    assert.deepEqual(first.map((r) => r.name), ['d/also30', 'd/new']);
+    const after = first[1].height + ':' + first[1].name;
+    assert.deepEqual(parseAfterCursor(after), { height: 30, name: 'd/new' });
+    const second = cache.page({ sort: 'updated', after, limit: 2 });
+    assert.deepEqual(second.map((r) => r.name), ['id/x', 'd/mid']);
+    const alpha = cache.page({ limit: 2 });
+    assert.deepEqual(alpha.map((r) => r.name), ['d/also30', 'd/mid']);
+    const fromName = cache.page({ start: 'd/mid', limit: 10 });
+    assert.deepEqual(fromName.map((r) => r.name), ['d/new', 'd/old', 'id/x']);
+    const nsOnly = cache.page({ sort: 'updated', ns: 'id', limit: 10 });
+    assert.deepEqual(nsOnly.map((r) => r.name), ['id/x']);
+    assert.equal(parseAfterCursor('nope'), null);
     cache.close();
   });
 
@@ -310,6 +338,26 @@ describe('NameCache', () => {
     const news = cache.recentOps({ op: 'NAME_NEW', limit: 2, offset: 2 });
     assert.equal(news.length, 2);
     assert.equal(news[0].op, 'NAME_NEW');
+    cache.close();
+  });
+
+  it('memoizes countByNamespace until the tip or index changes', () => {
+    const cache = new NameCache(':memory:');
+    cache.upsertNameRecord({ name: 'd/a', value: '{}', address: 'N', height: 1000 }, 1000);
+    cache.setTip(1000, 'h1');
+    const first = cache.countByNamespace();
+    assert.equal(first.length, 1);
+    assert.equal(first[0].live, 1);
+    assert.equal(cache.countByNamespace(), first);
+    cache.upsertNameRecord({ name: 'd/b', value: '{}', address: 'N', height: 1000 }, 1000);
+    const afterWrite = cache.countByNamespace();
+    assert.notEqual(afterWrite, first);
+    assert.equal(afterWrite[0].total, 2);
+    assert.equal(cache.countByNamespace(), afterWrite);
+    cache.setTip(37001, 'h2');
+    const afterTip = cache.countByNamespace();
+    assert.notEqual(afterTip, afterWrite);
+    assert.equal(afterTip[0].expired, 2);
     cache.close();
   });
 });

@@ -19,14 +19,14 @@ app.js
 ├─ env, open SQLite, start ingest, listen on NMC_BIND:NMC_EXPLORER_PORT
 ├─ middleware     timeout, static Cache-Control, per-IP rate limit,
 │                 HTML TTL cache (/, /names, /namespaces, /namespace/:ns,
-│                 /name, /stats), ?lang= / Accept-Language,
+│                 /name, /stats, /blocks, /operations, /addresses), ?lang= / Accept-Language,
 │                 SEO, tip + name count
 └─ routes
    ├─ /                  explorer home (headers, namespaces, recent / expiring)
-   ├─ /names             registry + FTS5 search
+   ├─ /names             last-update recency + FTS5 search
    ├─ /name/:name        name_show (or SQLite names row); timeline from name_ops
    ├─ /namespaces /namespace/:ns
-   ├─ /robots.txt /sitemap.xml   crawl hints (landings only; not every name)
+   ├─ /robots.txt /sitemap.xml   sitemap index: hubs + live-name shards (50k URLs)
    └─ lib/routes.js      operations, addresses, blocks, txs, stats, JSON API
 ```
 
@@ -69,7 +69,7 @@ HTTP JSON-RPC to namecoind.
 
 SQLite WAL. One writer (ingest), HTTP only reads.
 
-Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `ops_daily`, `meta`. Never load the full registry into a JS array.
+Tables: `names` (current registry, no `ismine`), `name_ops`, `headers`, `ops_daily`, `meta`. Never load the full registry into a JS array. `/names` pages by last-update height (`after` keyset). `/namespace/:ns` and `GET /api/names` stay A–Z (`start`).
 
 Pager tuning on open (file and memory): WAL, `synchronous=NORMAL`, `busy_timeout=5000`, foreign keys, `cache_size` 384MB, `mmap_size` 1GB, `wal_autocheckpoint` 4000 pages (~16MB). Default autocheckpoint (4MB) fsyncs too often on a multi-GB index and stalls the HTTP thread.
 
@@ -85,7 +85,7 @@ Search: FTS5 virtual table `names_fts` (`unicode61`) via triggers on `names`. Au
 
 ### `lib/ttlcache.js` / `lib/httpcache.js` / `lib/ratelimit.js`
 
-In-process (no Redis). Bounded TTL LRU for HTML (`/`, `/names`, `/namespaces`, `/namespace/:ns`, `/name/*`, `/stats`), `gatherStats`, and `loadNameRecord`. Concurrent HTML misses share one render (`shareLoad`). Stale-while-revalidate on payloads; HTML hits skip SQLite and RPC. Ingest invalidates stats and the list/home HTML prefixes on every block, only the names in that block for `/name/*`, and flushes every store on reorg. Payload stats TTL (60s) only bounds work between blocks — a new block still drops the cache.
+In-process (no Redis). Bounded TTL LRU for HTML (`/`, `/names`, `/namespaces`, `/namespace/:ns`, `/name/*`, `/stats`, `/blocks`, `/operations`, `/addresses`), `gatherStats`, and `loadNameRecord`. Concurrent HTML misses share one render (`shareLoad`). Stale-while-revalidate on payloads; HTML hits skip SQLite and RPC. Ingest invalidates stats and the list/home HTML prefixes on every block, only the names in that block for `/name/*`, and flushes every store on reorg. Payload stats TTL (60s) only bounds work between blocks — a new block still drops the cache. `countByNamespace` is memoized per tip until the next index write.
 
 `Cache-Control` per route class, weak ETags + 304 on cached HTML, per-IP token buckets on `/api/search`, `/api/*`, `/stats`. Request timeout 60s (`NMC_REQUEST_TIMEOUT_MS`).
 
@@ -114,7 +114,7 @@ Header search and `GET /api/search`. Classifies the query as height, 64-hex (tx 
 
 ### `lib/seo.js`
 
-Per-page `<title>`, description, canonical, Open Graph / Twitter, hreflang, and JSON-LD (`Organization` + `WebSite` + `WebPage`). Canonical origin is `NMC_PUBLIC_URL` or `X-Forwarded-Proto` + Host. Search, pagination, `/og`, `/api/`, `/health`, and 404 are `noindex`. `/robots.txt` allows `/` and disallows `/api/` and `/health`. `/sitemap.xml` lists landing pages only (with hreflang) — not the ~780k name URLs. Favicon is the official Namecoin coin mark (CC BY 4.0).
+Per-page `<title>`, description, canonical, Open Graph / Twitter, and JSON-LD (`Organization` + `WebSite` + `WebPage`). The Organization is the explorer itself at the canonical origin. Canonical origin is `NMC_PUBLIC_URL` (official public instance: `https://explorer.namecoin.co`) or `X-Forwarded-Proto` + Host. Alias hosts 301 to that origin when `NMC_PUBLIC_URL` is set (loopback and `/health` are skipped). Search and pagination are `noindex, follow` so name links stay crawlable. `/og`, `/api/`, `/health`, and 404 are `noindex, nofollow`. `/robots.txt` allows `/` and disallows `/api/` and `/health`. `/sitemap.xml` is a sitemap index: hub landings plus live-name shards (`/sitemap/names-N.xml`, 50k URLs each). Favicon is the official Namecoin coin mark (CC BY 4.0). `d/` name titles include the `.bit` label.
 
 ### `lib/statsdata.js` / `lib/markets.js` / `lib/chainmetrics.js` / `lib/svgchart.js`
 

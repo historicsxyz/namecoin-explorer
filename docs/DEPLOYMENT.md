@@ -1,6 +1,6 @@
 # Deployment
 
-How to run Namecoin Explorer in production behind HTTPS. This is the stack used for [nmc.historics.xyz](https://nmc.historics.xyz).
+How to run Namecoin Explorer in production behind HTTPS. This is the stack used for the official instance, [explorer.namecoin.co](https://explorer.namecoin.co). An alias such as `nmc.historics.xyz` should 301 to that origin: the app does this when `NMC_PUBLIC_URL` is set, and Caddy should still redirect at the edge (snippet below).
 
 ## Reference stack
 
@@ -39,7 +39,7 @@ cd namecoin-explorer
 npm install --omit=dev
 cp .env.example .env
 # NMC_BIND=127.0.0.1  NMC_COOKIE_PATH=…  NMC_CACHE_DB=…
-# NMC_PUBLIC_URL=https://nmc.example.org   # canonical / Open Graph / sitemap
+# NMC_PUBLIC_URL=https://explorer.namecoin.co   # official origin: canonical / Open Graph / sitemap
 npm start
 # http://127.0.0.1:3100
 ```
@@ -83,7 +83,7 @@ PATH=/opt/node20/bin:$PATH npm rebuild better-sqlite3
 `/etc/caddy/Caddyfile` (recommended infra config — owned outside this repo):
 
 ```
-nmc.example.org {
+explorer.namecoin.co {
     encode gzip
     reverse_proxy 127.0.0.1:3100 {
         lb_try_duration 5s
@@ -96,6 +96,10 @@ nmc.example.org {
         Referrer-Policy no-referrer
         X-Content-Type-Options nosniff
     }
+}
+
+nmc.historics.xyz {
+    redir https://explorer.namecoin.co{uri} permanent
 }
 ```
 

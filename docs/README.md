@@ -2,7 +2,7 @@
 
 Operator and contributor notes for [Namecoin Explorer](https://github.com/historicsxyz/namecoin-explorer).
 
-The public instance is [nmc.historics.xyz](https://nmc.historics.xyz).
+The official public instance is [explorer.namecoin.co](https://explorer.namecoin.co).
 
 | Document | What it covers |
 |----------|----------------|

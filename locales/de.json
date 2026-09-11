@@ -74,6 +74,7 @@
     "search": "Namecoin-Namen zu „{q}“.",
     "name": "{name} auf Namecoin: aktueller Wert, Eigentümer, Ablauf und Operationsverlauf.",
     "nameTitle": "{name}",
+    "expired": "abgelaufen",
     "ns": "Namecoin-Namen im Namensraum {ns} — aktiv, bald ablaufend und abgelaufen.",
     "nsTitle": "{ns} Namen",
     "operations": "Bestätigte Namecoin-Namenoperationen aus kürzlich geminten Blöcken.",
@@ -141,7 +142,8 @@
     "status": "Status",
     "noMatch": "Keine Treffer. Der Register-Cache wird möglicherweise noch aufgebaut.",
     "next": "Weiter →",
-    "shown": "{n} angezeigt"
+    "shown": "{n} angezeigt",
+    "sortUpdated": "Neueste Aktualisierungen zuerst"
   },
   "name": {
     "expiredBanner": "Dieser Name ist ABGELAUFEN und gehört niemandem mehr. Jeder kann ihn neu registrieren.",

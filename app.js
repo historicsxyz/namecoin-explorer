@@ -14,7 +14,7 @@ const { NameCache } = require('./lib/cache');
 const { IngestService, ingestOptionsFromEnv } = require('./lib/ingest');
 const { t, pickLang } = require('./lib/i18n');
 const { sendApiJson } = require('./lib/api-json');
-const { attachSeo, registerSeoRoutes } = require('./lib/seo');
+const { attachSeo, registerSeoRoutes, attachCanonicalRedirect } = require('./lib/seo');
 const {
   renderValue,
   valuePreview,
@@ -88,6 +88,7 @@ app.use(layouts);
 app.use(compression());
 app.use(helmet({ contentSecurityPolicy: false }));
 app.set('trust proxy', 1);
+app.use(attachCanonicalRedirect());
 app.use(requestTimeout(Number(process.env.NMC_REQUEST_TIMEOUT_MS) || 60000));
 app.use(express.json({ limit: '32kb' }));
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -181,7 +182,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(attachSeo);
-registerSeoRoutes(app);
+registerSeoRoutes(app, path.join(__dirname, 'public'), cache);
 
 app.use((req, res, next) => {
   const tip = cache.getTip();
@@ -244,16 +245,16 @@ app.get('/og', (req, res) => {
 
 app.get('/names', async (req, res) => {
   res.locals.page = 'names';
-  const { limit = 50, start = '', ns = null, status = null, q = null } = req.query;
+  const { limit = 50, after = '', ns = null, status = null, q = null } = req.query;
   const cap = parseLimit(limit, 50, 50);
-  const startKey = String(start || '').slice(0, 255);
+  const afterKey = String(after || '').slice(0, 255);
   let rows = [], total = 0;
   try {
     if (q) {
       rows = cache.search(String(q).slice(0, 80), cap);
       total = rows.length;
     } else {
-      rows = cache.page({ start: startKey, limit: cap, ns, status });
+      rows = cache.page({ after: afterKey, limit: cap, ns, status, sort: 'updated' });
       total = rows.length;
     }
   } catch (e) { rows = []; }

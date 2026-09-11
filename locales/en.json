@@ -74,6 +74,7 @@
     "search": "Namecoin names matching “{q}”.",
     "name": "{name} on Namecoin: current value, owner, expiry, and operation history.",
     "nameTitle": "{name}",
+    "expired": "expired",
     "ns": "Namecoin names in the {ns} namespace — live, expiring, and expired records.",
     "nsTitle": "{ns} names",
     "operations": "Confirmed Namecoin name operations mined into recent blocks.",
@@ -141,7 +142,8 @@
     "status": "Status",
     "noMatch": "No names match. The registry cache may still be building — give it a moment.",
     "next": "Next →",
-    "shown": "{n} shown"
+    "shown": "{n} shown",
+    "sortUpdated": "Newest updates first"
   },
   "name": {
     "expiredBanner": "This name is EXPIRED and no longer owned. It may be re-registered by anyone.",

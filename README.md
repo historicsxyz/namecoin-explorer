@@ -10,7 +10,7 @@
 Self-hosted **name browser** and **operations explorer** for [Namecoin](https://namecoin.org).  
 Backed by your own full node. Index in SQLite. No build step.
 
-**Live:** [nmc.historics.xyz](https://nmc.historics.xyz)
+**Live:** [explorer.namecoin.co](https://explorer.namecoin.co)
 
 </div>
 
@@ -36,7 +36,7 @@ The node stays authoritative when it is reachable. SQLite is the browse index, a
 | Path | UI |
 |------|----|
 | `/` | Home — tip, namespaces, recent / expiring names |
-| `/names` | Registry — search, namespace, live / expiring / expired |
+| `/names` | Registry — newest updates first; search, namespace, live / expiring / expired |
 | `/name/:name` | Current record + operation timeline |
 | `/namespaces` | Namespace prefixes (`d/`, `id/`, …) |
 | `/namespace/:ns` | Names in one prefix |
@@ -86,7 +86,7 @@ See [`.env.example`](.env.example).
 |----------|---------|-------------|
 | `NMC_EXPLORER_PORT` | `3100` | HTTP port |
 | `NMC_BIND` | `127.0.0.1` | Listen address. Keep loopback; put Caddy/nginx in front |
-| `NMC_PUBLIC_URL` | *(inferred)* | Public origin for canonical, Open Graph, and sitemap URLs. Example: `https://nmc.historics.xyz` |
+| `NMC_PUBLIC_URL` | *(inferred)* | Public origin for canonical, Open Graph, and sitemap URLs. Official instance: `https://explorer.namecoin.co` |
 | `NMC_RPC_HOST` | `127.0.0.1` | namecoind JSON-RPC host |
 | `NMC_RPC_PORT` | `8336` | namecoind JSON-RPC port |
 | `NMC_RPC_USER` | `hermes` | Used only if there is no cookie |
@@ -109,7 +109,7 @@ List and lookup endpoints that have an index use SQLite. Live-node fields add `"
 |----------|-------------|
 | `GET /api/stats` | Totals, namespaces, chain, market, hashrate |
 | `GET /api/search?q=` | Lookup: name, height, txid, or address |
-| `GET /api/names?limit=&start=&ns=` | Paginated registry |
+| `GET /api/names?limit=&start=&ns=` | Paginated registry (A–Z) |
 | `GET /api/namespaces` | Namespace totals |
 | `GET /api/namespace/:ns` | Names in one prefix |
 | `GET /api/name/:name` | Current record (`name_show`, or the index if RPC fails) |
@@ -144,7 +144,7 @@ Browser ──HTTP──► Explorer (Express, 127.0.0.1:3100)
                     ├─ lib/names.js       values + TRANSFER / RENEW inference
                     ├─ lib/expiry.js      36,000 expire / 4,032 semi-expire
                     ├─ lib/i18n.js        en / de catalogs
-                    ├─ lib/seo.js         title, canonical, OG, sitemap
+                    ├─ lib/seo.js         title, canonical, OG, sitemap index + live names
                     ├─ lib/statsdata.js   stats + header tickers
                     └─ lib/api-json.js    JSON vs HTML wrapper
                          │

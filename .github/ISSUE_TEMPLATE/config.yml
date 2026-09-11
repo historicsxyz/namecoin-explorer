@@ -4,8 +4,8 @@ contact_links:
     url: https://github.com/historicsxyz/namecoin-explorer/security/advisories/new
     about: Report privately. Do not open a public issue.
   - name: Live explorer
-    url: https://nmc.historics.xyz
-    about: Public instance (nmc.historics.xyz)
+    url: https://explorer.namecoin.co
+    about: Official public instance (explorer.namecoin.co)
   - name: Documentation
     url: https://github.com/historicsxyz/namecoin-explorer/blob/main/docs/README.md
     about: README, architecture, deployment, and contributing
